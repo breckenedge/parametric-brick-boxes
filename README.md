@@ -20,3 +20,12 @@ every box with its size, height and shelf row. Pick one with `box_n`, choose
 `part = print / body / lid / assembled`, then render and export.
 
 `archive/` holds an earlier, decorative pillar version.
+
+## License
+
+© 2026 Aaron Breckenridge. Licensed under
+[Creative Commons Attribution-ShareAlike 4.0 International](https://creativecommons.org/licenses/by-sa/4.0/)
+(CC BY-SA 4.0); see [LICENSE](LICENSE).
+
+LEGO® is a trademark of the LEGO Group, and Hot Wheels® and Mattel Brick Shop™ are
+trademarks of Mattel, none of which sponsor, authorize or endorse this project.
