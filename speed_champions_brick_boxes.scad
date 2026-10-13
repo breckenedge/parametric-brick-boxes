@@ -88,10 +88,8 @@ fig_count = 1;          // [0:1:2]
 box_figs = [];
 // studs added beside the car for the figures
 fig_strip = 3;          // [2:1:6]
-// which side of the car the figures stand on, seen from the front
-fig_side = "front";     // [front, back, left, right]
-// front / back: where along the strip the figures stand, seen from the front
-fig_align = "right";    // [left, center, right]
+// where the figures stand, seen from the front: N = back, S = front, E = right end, W = left end; corners stand at that end of the back or front
+fig_dir = "SE";        // [NE, N, NW, W, SW, S, SE, E]
 
 /* [Box size] */
 // flat border around every panel and the top area, studs
@@ -181,8 +179,9 @@ PLATE = 3.2;            // plate height (brick = 3 plates)
 PLAY = 0.1;             // LEGO play per side: n studs = n * 8 - 0.2 mm
 CUSTOM_H = 16;          // custom car height in plates: only for the ghost and the shelf clearance check
 // the figure strip runs along the front or back of the car, or across one end
-ENDS = fig_side == "left" || fig_side == "right";
-FSIGN = fig_side == "right" || fig_side == "back" ? 1 : -1;      // which way the strip lies from the car
+ENDS = fig_dir == "E" || fig_dir == "W";                       // strip across an end, not along the front or back
+FSIGN = ENDS ? (fig_dir == "E" ? 1 : -1) : (fig_dir[0] == "N" ? 1 : -1);   // which way the strip lies from the car
+FALIGN = len(fig_dir) == 2 ? (fig_dir[1] == "E" ? 1 : -1) : 0;          // front / back: figures at the right end, left end or centred
 LID_H = PITCH;          // lid band: it is also the border above the side panels
 BOT_GAP = 1.5 * PLATE;  // smallest flat band under the panels
 WALL = max(2.4, panel_depth + skin);
@@ -281,7 +280,7 @@ function snap(f, a, n) = let(o = (a % 2 == 0 ? PITCH / 2 : 0) + (n % 2 == 0 ? PI
 function fig_spot(fs, nf, i) = let(a = [fs[0] - 2 * frame, fs[1] - 2 * frame], g = nf == 1 ? 0 : (i - 0.5) * 3 * PITCH)
     ENDS ? [snap(FSIGN * (a[0] - fig_strip) / 2 * PITCH, a[0], fig_pad_x), snap(g, a[1], fig_pad_y)]
     : [let(half = (nf == 1 ? 0 : 1.5 * PITCH) + fig_pad_x * PITCH / 2,      // half the group's width
-           cx = fig_align == "center" ? 0 : (fig_align == "right" ? 1 : -1) * (a[0] * PITCH / 2 - half))
+           cx = FALIGN * (a[0] * PITCH / 2 - half))
        snap(cx + g, a[0], fig_pad_x),
        snap(FSIGN * (a[1] - fig_strip) / 2 * PITCH, a[1], fig_pad_y)];
 // centre of the car: on whole studs, at the far end of the top area from the figures
