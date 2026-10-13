@@ -22,19 +22,21 @@
 //  top, so an even rise (2 rows = 16 mm = 5 plates) keeps the panels of
 //  neighbouring boxes on one common grid.
 //
-//  Car size classes (envelope incl. tyres / mirrors / wings, in studs):
-//    6w          6-wide era, 2015-2019            7 x 17
-//    8w          8-wide road car, 2020+           9 x 21
-//    8w_long     Le Mans / GT racers, pickups     9 x 24
-//    f1_classic  F1 2020-2024, F1 Academy         9 x 23
-//    f1_2025     2025+ F1 grid                   10 x 27
-//    f1_mini     F1 Collectible Race Cars (71049)  5 x 11
-//    mbs_speed   Mattel Brick Shop Hot Wheels     10 x 22
-//                Speed Series, 1:32
-//    coupon      test print: a mini box (5 x 6 studs with a minifig)
-//                that checks side studs, top studs, panel and lid fit
-//    custom      car_w / car_l
-//  car_size sets every box; box_sizes overrides box by box.
+//  Box size is studs_l x studs_w, the whole footprint, and nothing else
+//  changes it: the car and minifigs share the top. Sizes that suit common
+//  cars (car envelope incl. tyres / mirrors / wings; box with the default
+//  1-stud frame and a 3-stud figure strip along the front or back - take 3
+//  off studs_w with no figures):
+//                                                   car       box l x w
+//    6-wide era, 2015-2019                         7 x 17     19 x 12
+//    8-wide road car, 2020+                        9 x 21     23 x 14
+//    Le Mans / GT racers, pickups                  9 x 24     26 x 14
+//    F1 2020-2024, F1 Academy                      9 x 23     25 x 14
+//    2025+ F1 grid                                10 x 27     29 x 15
+//    F1 Collectible Race Cars (71049)              5 x 11     13 x 10
+//    Mattel Brick Shop Speed Series, 1:32         10 x 22     24 x 15
+//    test print: checks studs, panels, lid fit         -      6 x 5
+//  studs_l / studs_w set every box; box_sizes overrides box by box.
 //
 //  Layout: boxes are packed onto the shelf in rows on the stud grid (not
 //  drawn), each row taller than the one in front of it. The console lists
@@ -51,7 +53,7 @@
 //  then close it. Tune hinge_play for stiffness.
 //  Side studs print as short horizontal pegs, with a small flat shaved off
 //  their undersides (side_stud_flat) so the worst of the overhang is gone.
-//  Print car_size = "coupon" first to tune stud_d / side_stud_d / lid_clear.
+//  Print stud_fit_test.scad, then a 6 x 5 box, to tune stud_d / side_stud_d / lid_clear.
 //  Export with box_n = N, part = print / body / lid.
 // =====================================================================
 
@@ -72,26 +74,25 @@ shelf_depth_in = 18;
 // vertical space between cabinet shelves
 shelf_clearance_in = 12;
 
-/* [Car size] */
-car_size = "8w";        // [6w, 8w, 8w_long, f1_classic, f1_2025, f1_mini, mbs_speed, coupon, custom]
-// one entry per box, overrides car_size; empty = fill the shelf with car_size
+/* [Box size] */
+// box length, left to right, studs (the whole footprint - see the size table at the top)
+studs_l = 23;           // [5:1:40]
+// box width, front to back, studs
+studs_w = 14;           // [5:1:30]
+// one [studs_l, studs_w] per box, overrides the two above; empty = fill the shelf
 box_sizes = [];
-// custom: width in studs
-car_w = 9;              // [4:1:12]
-// custom: length in studs
-car_l = 21;             // [6:1:32]
 
 /* [Minifigs] */
 // minifigs per box
 fig_count = 1;          // [0:1:2]
 // one entry per box (0-2), overrides fig_count
 box_figs = [];
-// studs added beside the car for the figures
+// studs of the top the figures stand in, beside the car (does not change the box size)
 fig_strip = 3;          // [2:1:6]
 // where the figures stand, seen from the front: N = back, S = front, E = right end, W = left end; corners stand at that end of the back or front
 fig_dir = "SE";        // [NE, N, NW, W, SW, S, SE, E]
 
-/* [Box size] */
+/* [Box shape] */
 // flat border around every panel and the top area, studs
 frame = 1;              // [1:1:3]
 // rounding of the vertical edges, mm
@@ -177,7 +178,7 @@ bed_z = 250;
 PITCH = 8;              // stud pitch
 PLATE = 3.2;            // plate height (brick = 3 plates)
 PLAY = 0.1;             // LEGO play per side: n studs = n * 8 - 0.2 mm
-CUSTOM_H = 16;          // custom car height in plates: only for the ghost and the shelf clearance check
+CAR_H = 16;             // car height in plates: only for the ghost and the shelf clearance check
 // the figure strip runs along the front or back of the car, or across one end
 ENDS = fig_dir == "E" || fig_dir == "W";                       // strip across an end, not along the front or back
 FSIGN = ENDS ? (fig_dir == "E" ? 1 : -1) : (fig_dir[0] == "N" ? 1 : -1);   // which way the strip lies from the car
@@ -209,39 +210,21 @@ function mm(n) = n * PITCH - 2 * PLAY;
 // ---------------------------------------------------------------------
 //  Sizes
 // ---------------------------------------------------------------------
-// [key, label, width studs, length studs, height plates]
-CARS = [
-    ["6w",         "6-wide",       7, 17, 13],
-    ["8w",         "8-wide",       9, 21, 16],
-    ["8w_long",    "8-wide long",  9, 24, 17],
-    ["f1_classic", "F1 2020-24",   9, 23, 14],
-    ["f1_2025",    "F1 2025+",    10, 27, 16],
-    ["f1_mini",    "F1 mini",      5, 11,  8],   // 71049 collectible: 8 x 3.5 x 2.5 cm
-    ["mbs_speed",  "MBS Speed",   10, 22, 15],   // Mattel Brick Shop Speed Series: MC20 8 x 4.5 x 16.5 cm, Avant RS2 6.5 in long
-    ["coupon",     "coupon",       1,  3,  3],   // test print
-];
-CAR_KEYS = [for (c = CARS) c[0]];
-
-// [w, l, h, label]
-function car_of(key) = key == "custom" ? [car_w, car_l, CUSTOM_H, "custom"] :
-    let(i = search([key], CAR_KEYS)[0]) i == [] ? car_of("8w") : [CARS[i][2], CARS[i][3], CARS[i][4], CARS[i][1]];
-
-// footprint in studs: [length, width]
-function foot(c, nf) = let(s = nf > 0 ? fig_strip : 0)
-    ENDS ? [c[1] + 2 * frame + s, c[0] + 2 * frame] : [c[1] + 2 * frame, c[0] + 2 * frame + s];
+// footprint of box n in studs: [length, width]
+function foot_n(n) = let(b = n < len(box_sizes) ? box_sizes[n] : [studs_l, studs_w])
+    [max(5, round(b[0])), max(5, round(b[1]))];
+function figs_of(n) = max(0, min(2, n < len(box_figs) ? box_figs[n] : fig_count));
+// the car the top leaves room for, in studs: [w, l, h in plates] - the top
+// area less the figure strip. Only used for the ghost and the clearance check.
+function car_n(n) = let(fs = foot_n(n), a = [fs[0] - 2 * frame, fs[1] - 2 * frame], s = figs_of(n) > 0 ? fig_strip : 0)
+    ENDS ? [a[1], max(1, a[0] - s), CAR_H] : [max(1, a[1] - s), a[0], CAR_H];
 
 // ---------------------------------------------------------------------
 //  Layout: rows packed front to back, on the stud grid
 // ---------------------------------------------------------------------
-F0 = foot(car_of(car_size), fig_count);
-N_AUTO = max(1, floor((SW + gap * PITCH) / (F0[0] * PITCH + gap * PITCH)))
-       * max(1, floor((SD + gap * PITCH) / (F0[1] * PITCH + gap * PITCH)));
-N = len(box_sizes) > 0 ? len(box_sizes) : car_size == "coupon" ? 1 : N_AUTO;   // a coupon is a single test box
-
-function key_of(n) = n < len(box_sizes) ? box_sizes[n] : car_size;
-function figs_of(n) = max(0, min(2, n < len(box_figs) ? box_figs[n] : fig_count));
-function car_n(n) = car_of(key_of(n));
-function foot_n(n) = foot(car_n(n), figs_of(n));
+N_AUTO = max(1, floor((SW + gap * PITCH) / (studs_l * PITCH + gap * PITCH)))
+       * max(1, floor((SD + gap * PITCH) / (studs_w * PITCH + gap * PITCH)));
+N = len(box_sizes) > 0 ? len(box_sizes) : N_AUTO;
 
 // [x0 stud, y0 stud, row] per box; a row ends when the next box won't fit
 function pack(i = 0, x = 0, y = 0, r = 0, rd = 0, acc = []) =
@@ -555,18 +538,18 @@ echo(str("\n==== Speed Champions brick boxes ====",
     "\n  heights     ", side_rows, " .. ", side_rows + (NROWS - 1) * rise, " stud rows",
     "\n  tallest     ", round(TALL), " of ", round(SH), " mm clearance (box + car)", "\n"));
 for (n = [0:N - 1]) let(fs = foot_n(n), c = car_n(n), P = panel_z(H_of(n)))
-    echo(str("  box ", n, ":  ", c[3], "  ", fs[0], " x ", fs[1], " studs (", round(mm(fs[0])), " x ", round(mm(fs[1])),
+    echo(str("  box ", n, ":  ", fs[0], " x ", fs[1], " studs (", round(mm(fs[0])), " x ", round(mm(fs[1])),
              " mm)  ", h_of(n), " plates (", H_of(n), " mm)  row ", L0[n][2], "  figs ", figs_of(n),
              "  side panels ", P[2], " row", P[2] == 1 ? "" : "s", " x ",
              [for (p = panels(fs[0])) p[1]], " / ", [for (p = panels(fs[1])) p[1]], " studs"));
-for (k = concat([car_size], box_sizes))
-    if (k != "custom" && search([k], CAR_KEYS)[0] == []) echo(str("WARNING: unknown car size \"", k, "\" - using 8w"));
 if (DEPTH * PITCH > SD) echo(str("WARNING: layout is ", DEPTH, " studs deep - deeper than the shelf (", floor(SD / PITCH), ")"));
 if (TALL > SH) echo(str("WARNING: tallest box + car is ", round(TALL), " mm - over the ", round(SH), " mm clearance"));
 for (n = [0:N - 1]) let(fs = foot_n(n))
     if (max(mm(fs[0]), mm(fs[1])) > max(bed_x, bed_y) || min(mm(fs[0]), mm(fs[1])) > min(bed_x, bed_y) || H_of(n) > bed_z)
         echo(str("WARNING: box ", n, " is too big for the printer bed"));
 if (corner_r > frame * PITCH - 1) echo("WARNING: corner_r is wider than the frame - corners will cut into the panels");
+for (n = len(box_sizes) > 0 ? [0:N - 1] : [0]) let(c = car_n(n)) if (figs_of(n) > 0 && min(c[0], c[1]) < 3)
+    echo(str("WARNING: box ", n, " leaves only ", c[1], " x ", c[0], " studs for the car beside the figures - make it bigger or lower fig_strip"));
 if (HINGE && WALL < HR + 0.4) echo(str("WARNING: walls (", WALL, " mm) are too thin for the hinge - raise panel_depth or skin to make them at least ", HR + 0.4, " mm"));
 for (n = [0:N - 1]) let(fs = foot_n(n))
     if (HINGE && tab_xs(fs)[1] < TAB_W / 2 + hinge_clear + PIN_L + 2)

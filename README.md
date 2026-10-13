@@ -5,8 +5,8 @@ written in OpenSCAD. One box per car: round-cornered, with a studded lid, recess
 studded panels on all four sides, and storage inside.
 
 - Everything is in LEGO units: footprints in studs (8 mm), heights in plates (3.2 mm).
-- Car size classes: 6-wide, 8-wide, 8-wide long, F1 2020-24, F1 2025+, F1 collectible
-  minis (71049), Mattel Brick Shop Speed Series, or custom.
+- Box size is set directly in studs (`studs_l` x `studs_w`), and nothing else changes it; the
+  file header lists sizes that suit 6-wide, 8-wide, F1 and other cars.
 - Boxes are packed onto your shelf in rows, each row taller than the one in front, so
   the cars in back sit higher.
 - Minifig stand space beside each car (0-2 figures, placed by compass direction: N, NE, E, SE, S, SW, W or NW).
@@ -15,7 +15,7 @@ studded panels on all four sides, and storage inside.
 - Snaps shut on a detent: a bead inside the front lip clicks into a groove in the lid
   (`detent_count`, `detent_len`; `detent_bump` sets how firm the snap is).
 - Prints without supports. Print `stud_fit_test.scad` first to find your stud sizes, then
-  `car_size = "coupon"` to check the whole fit.
+  a small 6 x 5 box to check the whole fit.
 
 ## Use
 
