@@ -128,10 +128,10 @@ panels_right = true;
 
 /* [Studs] */
 // printed stud diameter - tune for clutch (LEGO 4.8)
-stud_d = 4.85;          // [4.6:0.05:5.1]
+stud_d = 5.0;           // [4.6:0.05:5.1]
 stud_h = 1.8;           // [1.2:0.1:2]
 // wall studs print sideways and size differently - tune separately
-side_stud_d = 4.85;     // [4.6:0.05:5.1]
+side_stud_d = 4.9;      // [4.6:0.05:5.1]
 // flat shaved off the underside of wall studs, for a cleaner overhang
 side_stud_flat = 0.4;   // [0:0.1:1]
 
