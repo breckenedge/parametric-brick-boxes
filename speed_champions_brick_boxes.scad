@@ -12,7 +12,9 @@
 //    - inset studded panels on all four sides; at the default depth of one
 //      plate, plates and tiles pressed into them finish flush with the
 //      frame - tile a mosaic, a stripe, a sponsor board, a name
-//    - removable lid (the top band) over an open storage box
+//    - lid (the top band) over an open storage box: hinged on two tabs at
+//      the back (friction pins, holds any angle up to 90 deg, lifts off at
+//      90 deg), or a plain lift-off lid seated on a ridge
 //
 //  Panel openings are whole studs plus a little play, so an n-stud plate
 //  drops in. Box height is set in side stud rows (side_rows, plus rise per
@@ -31,7 +33,7 @@
 //                Speed Series, 1:32
 //    coupon      test print: a mini box (5 x 6 studs with a minifig)
 //                that checks side studs, top studs, panel and lid fit
-//    custom      car_w / car_l / car_h
+//    custom      car_w / car_l
 //  car_size sets every box; box_sizes overrides box by box.
 //
 //  Layout: boxes are packed onto the shelf in rows on the stud grid (not
@@ -43,6 +45,10 @@
 //          ceilings slope back at 45 deg so they print without drooping
 //    lid   top up: a 45 deg groove in its underside drops over a
 //          ridge on the wall tops and centres itself
+//  Hinge: the body's tabs print upright with flat-bottomed pins; the lid's
+//  slots, pin holes and lead-ins all open downwards. To fit the lid, hold it
+//  upright (open 90 deg) behind the tabs and slide it forward onto the pins,
+//  then close it. Tune hinge_play for stiffness.
 //  Side studs print as short horizontal pegs, with a small flat shaved off
 //  their undersides (side_stud_flat) so the worst of the overhang is gone.
 //  Print car_size = "coupon" first to tune stud_d / side_stud_d / lid_clear.
@@ -50,64 +56,111 @@
 // =====================================================================
 
 /* [Box to print] */
-box_n = 0;              // box to show / export; its height comes from its row on the shelf (see console)
+// box to show / export; its height comes from its row on the shelf (see console)
+box_n = 0;
 part = "print";         // [print, body, lid, assembled]
-lid_lift = 0;           // [0:1:60] lift the lid in previews to see inside
-show_cars = true;       // ghost cars + minifigs (preview only)
+// hinged lid: open it in previews, degrees
+lid_open = 0;           // [0:5:90]
+// lift-off lid: lift it in previews to see inside
+lid_lift = 0;           // [0:1:60]
+// ghost cars + minifigs (preview only)
+show_cars = true;
 
 /* [Shelf space] */
 shelf_width_in = 30;
 shelf_depth_in = 18;
-shelf_clearance_in = 12;  // vertical space between cabinet shelves
+// vertical space between cabinet shelves
+shelf_clearance_in = 12;
 
 /* [Car size] */
 car_size = "8w";        // [6w, 8w, 8w_long, f1_classic, f1_2025, f1_mini, mbs_speed, coupon, custom]
 // one entry per box, overrides car_size; empty = fill the shelf with car_size
 box_sizes = [];
-car_w = 9;              // [4:1:12] custom: width in studs
-car_l = 21;             // [10:1:32] custom: length in studs
-car_h = 16;             // [8:1:30] custom: height in plates
+// custom: width in studs
+car_w = 9;              // [4:1:12]
+// custom: length in studs
+car_l = 21;             // [6:1:32]
 
 /* [Minifigs] */
-fig_count = 1;          // [0:1:2] minifigs per box
+// minifigs per box
+fig_count = 1;          // [0:1:2]
 // one entry per box (0-2), overrides fig_count
 box_figs = [];
-fig_strip = 3;          // [2:1:6] studs added in front of the car for the figures
-fig_side = "right";     // [left, center, right] where the figures stand along the front strip, seen from the front
+// studs added beside the car for the figures
+fig_strip = 3;          // [2:1:6]
+// which side of the car the figures stand on, seen from the front
+fig_side = "front";     // [front, back, left, right]
+// front / back: where along the strip the figures stand, seen from the front
+fig_align = "right";    // [left, center, right]
 
 /* [Box size] */
-frame = 1;              // [1:1:3] flat border around every panel and the top area, studs
-corner_r = 5;           // [0:0.5:7] rounding of the vertical edges, mm
-side_rows = 2;          // [1:1:30] stud rows on the side panels of the front row of boxes - sets the box height
-rise = 6;               // [0:1:12] extra stud rows per shelf row back (even numbers keep panels aligned)
-gap = 1;                // [0:1:4] studs between boxes on the shelf (changes how many fit per row)
+// flat border around every panel and the top area, studs
+frame = 1;              // [1:1:3]
+// rounding of the vertical edges, mm
+corner_r = 5;           // [0:0.5:7]
+// stud rows on the side panels of the front row of boxes - sets the box height
+side_rows = 2;          // [1:1:30]
+// extra stud rows per shelf row back (even numbers keep panels aligned)
+rise = 6;               // [0:1:12]
+// studs between boxes on the shelf (changes how many fit per row)
+gap = 1;                // [0:1:4]
 
 /* [Panels] */
-top_studs = true;       // studs over the whole top area (off = plain, with stud pads for the minifigs only)
-fig_pad_x = 2;          // [1:1:4] minifig stud pad when top_studs is off, studs across
-fig_pad_y = 2;          // [1:1:4] ... and front to back
-panel_depth = 3.2;      // [0.8:0.8:4.8] side panel recess depth (3.2 = one plate, finishes flush)
-panel_max = 0;          // [0:1:24] longest panel in studs; longer faces split with flat mullions (0 = one panel)
-side_cols = 0;          // [0:1:30] studs across each side panel, centred (0 = as many as fit)
-// side stud layout: square grid; checker = every other stud, a 45 deg look that still takes
-// ordinary plates; diagonal = full lattice turned 45 deg (plates go on at 45 deg)
-stud_pattern = "grid";     // [grid, checker, diagonal]
-panel_play = 0.1;       // [0:0.05:0.4] extra opening clearance per side, on top of LEGO's 0.1
+// studs over the whole top area (off = plain, with stud pads for the minifigs only)
+top_studs = true;
+// minifig stud pad when top_studs is off, studs across
+fig_pad_x = 2;          // [1:1:4]
+// ... and front to back
+fig_pad_y = 2;          // [1:1:4]
+// side panel recess depth (3.2 = one plate, finishes flush)
+panel_depth = 3.2;      // [0.8:0.8:4.8]
+// longest panel in studs; longer faces split with flat mullions (0 = one panel)
+panel_max = 0;          // [0:1:24]
+// studs across each side panel, centred (0 = as many as fit)
+side_cols = 0;          // [0:1:30]
+// side studs: grid; checker = every other stud (still takes plates); diagonal = lattice at 45 deg
+stud_pattern = "grid";  // [grid, checker, diagonal]
+// extra opening clearance per side, on top of LEGO's 0.1
+panel_play = 0.1;       // [0:0.05:0.4]
 panels_front = true;
 panels_back = true;
 panels_left = true;
 panels_right = true;
 
 /* [Studs] */
-stud_d = 4.85;          // [4.6:0.05:5.1] printed stud diameter - tune for clutch (LEGO 4.8)
-stud_h = 1.7;           // [1.2:0.1:2]
-side_stud_d = 4.85;     // [4.6:0.05:5.1] wall studs print sideways and size differently - tune separately
-side_stud_flat = 0.4;   // [0:0.1:1] flat shaved off the underside of wall studs, for a cleaner overhang
+// printed stud diameter - tune for clutch (LEGO 4.8)
+stud_d = 4.85;          // [4.6:0.05:5.1]
+stud_h = 1.8;           // [1.2:0.1:2]
+// wall studs print sideways and size differently - tune separately
+side_stud_d = 4.85;     // [4.6:0.05:5.1]
+// flat shaved off the underside of wall studs, for a cleaner overhang
+side_stud_flat = 0.4;   // [0:0.1:1]
 
 /* [Box construction] */
-skin = 1.6;             // [0.8:0.4:4] wall left behind a panel (half a plate)
-floor_t = 3.2;          // [1.6:0.8:6.4] 1 plate
-lid_clear = 0.2;        // [0:0.05:0.6] play between lid groove and wall ridge
+// wall left behind a panel (half a plate)
+skin = 1.6;             // [0.8:0.4:4]
+// floor thickness (3.2 = 1 plate)
+floor_t = 3.2;          // [1.6:0.8:6.4]
+// recessed plinth round the bottom: hides the line where the solid floor shrinks and pulls the walls in (0 = off)
+plinth_inset = 0.6;     // [0:0.1:1.5]
+// how far the plinth reaches above the top of the floor
+plinth_above = 0.6;     // [0:0.2:2]
+// the same band round the top edge of the lid, mirroring the plinth at the bottom
+lid_plinth = true;
+// lift-off lid: play between lid groove and wall ridge
+lid_clear = 0.2;        // [0:0.05:0.6]
+
+/* [Lid hinge] */
+// hinge: pivots on two tabs at the back; seat: lift-off lid on a ridge
+lid_style = "hinge";    // [hinge, seat]
+// studs from each end of the box to a hinge tab
+hinge_from_end = 1;     // [1:1:6]
+// pins on the tabs
+hinge_pin_d = 3;        // [2.4:0.1:3.4]
+// pin hole minus pin diameter - smaller = stiffer, so the lid holds its angle
+hinge_play = 0.05;      // [-0.1:0.05:0.4]
+// gap around the tabs in their slots
+hinge_clear = 0.25;     // [0.1:0.05:0.5]
 
 /* [Printing] */
 bed_x = 250;
@@ -118,12 +171,24 @@ bed_z = 250;
 PITCH = 8;              // stud pitch
 PLATE = 3.2;            // plate height (brick = 3 plates)
 PLAY = 0.1;             // LEGO play per side: n studs = n * 8 - 0.2 mm
+CUSTOM_H = 16;          // custom car height in plates: only for the ghost and the shelf clearance check
+// the figure strip runs along the front or back of the car, or across one end
+ENDS = fig_side == "left" || fig_side == "right";
+FSIGN = fig_side == "right" || fig_side == "back" ? 1 : -1;      // which way the strip lies from the car
 LID_H = PITCH;          // lid band: it is also the border above the side panels
 BOT_GAP = 1.5 * PLATE;  // smallest flat band under the panels
 WALL = max(2.4, panel_depth + skin);
 RIM = 1.2;              // flat lid rim on the wall top, outside the seat
 TIP = 0.8;              // flat on the inner edge of the seat ridge
 SEAT = max(0.4, WALL - RIM - TIP);   // height of the 45 deg seat ridge above the seam
+PLINTH_H = floor_t + plinth_above;   // height of the recessed bands at the bottom of the body and top of the lid
+HINGE = lid_style == "hinge";
+HR = LID_H / 2;         // hinge axis: mid-height of the lid band, HR in from the back face
+TAB_R = 2;              // hinge tab head radius
+TAB_W = 6;              // tab thickness along the axis
+TAB_D = 6;              // tab stem depth in front of the axis: a solid block, buttressed down the inside of the back wall
+PIN_L = 1.5;            // pin length out of each tab face
+PIN_FLAT = 0.5;         // flat on top and bottom of each pin: prints clean, and only passes the lead-in at 90 deg
 eps = 0.01;
 $fn = 40;
 
@@ -149,11 +214,12 @@ CARS = [
 CAR_KEYS = [for (c = CARS) c[0]];
 
 // [w, l, h, label]
-function car_of(key) = key == "custom" ? [car_w, car_l, car_h, "custom"] :
+function car_of(key) = key == "custom" ? [car_w, car_l, CUSTOM_H, "custom"] :
     let(i = search([key], CAR_KEYS)[0]) i == [] ? car_of("8w") : [CARS[i][2], CARS[i][3], CARS[i][4], CARS[i][1]];
 
 // footprint in studs: [length, width]
-function foot(c, nf) = [c[1] + 2 * frame, c[0] + 2 * frame + (nf > 0 ? fig_strip : 0)];
+function foot(c, nf) = let(s = nf > 0 ? fig_strip : 0)
+    ENDS ? [c[1] + 2 * frame + s, c[0] + 2 * frame] : [c[1] + 2 * frame, c[0] + 2 * frame + s];
 
 // ---------------------------------------------------------------------
 //  Layout: rows packed front to back, on the stud grid
@@ -201,18 +267,27 @@ function panel_pts(w, h) = let(nx = round(w / PITCH), nz = round(h / PITCH))
 // snap a pad of n studs centred near f onto the stud grid of an a-stud area
 function snap(f, a, n) = let(o = (a % 2 == 0 ? PITCH / 2 : 0) + (n % 2 == 0 ? PITCH / 2 : 0))
     round((f - o) / PITCH) * PITCH + o;
-// centre of minifig i of nf: in the strip in front of the car, side by side when there are two
-function fig_spot(fs, nf, i) = [
-    let(gx = nf == 1 ? 0 : (i - 0.5) * 3 * PITCH,                       // offset within a pair
-        half = (nf == 1 ? 0 : 1.5 * PITCH) + fig_pad_x * PITCH / 2,     // half the group's width
-        cx = fig_side == "center" ? 0 : (fig_side == "right" ? 1 : -1) * ((fs[0] - 2 * frame) * PITCH / 2 - half))
-    snap(cx + gx, fs[0] - 2 * frame, fig_pad_x),
-    snap((-fs[1] / 2 + frame + fig_strip / 2) * PITCH, fs[1] - 2 * frame, fig_pad_y)];
+// centre of minifig i of nf in the strip; two stand side by side (one behind the other at an end)
+function fig_spot(fs, nf, i) = let(a = [fs[0] - 2 * frame, fs[1] - 2 * frame], g = nf == 1 ? 0 : (i - 0.5) * 3 * PITCH)
+    ENDS ? [snap(FSIGN * (a[0] - fig_strip) / 2 * PITCH, a[0], fig_pad_x), snap(g, a[1], fig_pad_y)]
+    : [let(half = (nf == 1 ? 0 : 1.5 * PITCH) + fig_pad_x * PITCH / 2,      // half the group's width
+           cx = fig_align == "center" ? 0 : (fig_align == "right" ? 1 : -1) * (a[0] * PITCH / 2 - half))
+       snap(cx + g, a[0], fig_pad_x),
+       snap(FSIGN * (a[1] - fig_strip) / 2 * PITCH, a[1], fig_pad_y)];
+// centre of the car: on whole studs, at the far end of the top area from the figures
+function car_spot(fs, c) = let(a = [fs[0] - 2 * frame, fs[1] - 2 * frame])
+    ENDS ? [-FSIGN * (a[0] - c[1]) / 2 * PITCH, ((a[1] - c[0]) % 2) * PITCH / 2]
+         : [((a[0] - c[1]) % 2) * PITCH / 2, -FSIGN * (a[1] - c[0]) / 2 * PITCH];
 
-module stud() cylinder(d = stud_d, h = stud_h + eps, $fn = 48);
+// stud with a 0.3 mm chamfer on the tip, so plates find it and press on easily
+module stud_shape(d) {
+    cylinder(d = d, h = stud_h - 0.3 + eps, $fn = 48);
+    translate([0, 0, stud_h - 0.3]) cylinder(d1 = d, d2 = d - 0.6, h = 0.3, $fn = 48);
+}
+module stud() stud_shape(stud_d);
 // wall stud: local -y ends up pointing down, so that is where the flat goes
 module side_stud() intersection() {
-    cylinder(d = side_stud_d, h = stud_h + eps, $fn = 48);
+    stud_shape(side_stud_d);
     translate([-side_stud_d, -side_stud_d / 2 + side_stud_flat, -1]) cube([2 * side_stud_d, 2 * side_stud_d, stud_h + 2]);
 }
 
@@ -263,17 +338,112 @@ module slab(fs, z, ins) translate([0, 0, z]) linear_extrude(eps) plan(fs, ins);
 // 45 deg seat ridge on the wall tops: from inset a at height z up and in by h
 module ridge(fs, z, a, h) hull() { slab(fs, z, a); slab(fs, z + h, a + h); }
 
+// keep only what lies in front of y (box coordinates)
+module front_of(fs, y) intersection() {
+    children();
+    translate([-mm(fs[0]), -mm(fs[1]), -1]) cube([2 * mm(fs[0]), mm(fs[1]) + y, 2 * bed_z]);
+}
+
+// ---------------------------------------------------------------------
+//  Hinge: two tabs on the back wall, pinned into slots in the lid.
+//  The axis runs along x at mid-height of the lid band, HR in from the back
+//  face. The lid's lower back edge is rounded about it, so as the lid opens
+//  nothing behind the axis ever drops below the seam, and everything in
+//  front of it rises. At 90 deg the lid's back face lands on the wall top:
+//  that is the stop. Hinge coordinates: u = towards the back, v = up.
+// ---------------------------------------------------------------------
+function hinge_axis(fs, H) = [mm(fs[1]) / 2 - HR, H - HR];      // [y, z]
+function tab_xs(fs) = [for (s = [-1, 1]) s * (mm(fs[0]) / 2 - hinge_from_end * PITCH)];
+
+// a 2D (u, v) profile around the hinge axis, extruded along x from x0 to x1
+module along_axis(fs, H, x0, x1) let(a = hinge_axis(fs, H))
+    translate([x0, a[0], a[1]]) rotate([90, 0, 90]) linear_extrude(x1 - x0) children();
+
+// tab head: teardrop so it prints upright. The stem stays in front of the axis
+// (anything behind it and above the seam would swing up into the lid), so it
+// grows forward instead, and a 45 deg buttress carries it down the wall inside
+module tab_head2d() hull() { circle(r = TAB_R); polygon([[-eps, -TAB_R * sqrt(2)], [eps, -TAB_R * sqrt(2)], [0, 0]]); }
+module tab2d() {
+    tab_head2d();
+    translate([-TAB_D, -HR - eps]) square([TAB_D, HR + eps]);
+    let(uw = HR - WALL, d = uw + TAB_D)          // buttress under the part of the stem that overhangs the inside
+        if (d > 0) polygon(uw < 0 ? [[-TAB_D, -HR + eps], [0, -HR + eps], [0, -HR - d], [uw, -HR - d]]
+                                  : [[-TAB_D, -HR + eps], [uw, -HR + eps], [uw, -HR - d]]);
+}
+
+// pin along +z with flats on local x (they end up top and bottom), cone tip
+module hinge_pin() intersection() {
+    union() {
+        cylinder(d = hinge_pin_d, h = PIN_L - 0.4 + eps);
+        translate([0, 0, PIN_L - 0.4]) cylinder(d1 = hinge_pin_d, d2 = hinge_pin_d - 0.8, h = 0.4);
+    }
+    cube([hinge_pin_d - 2 * PIN_FLAT, 2 * hinge_pin_d, 3 * PIN_L], center = true);
+}
+
+module hinge_tabs(fs, H) let(a = hinge_axis(fs, H))
+    for (tx = tab_xs(fs)) {
+        along_axis(fs, H, tx - TAB_W / 2, tx + TAB_W / 2) tab2d();
+        for (s = [-1, 1]) translate([tx + s * (TAB_W / 2 - eps), a[0], a[1]]) rotate([0, s * 90, 0]) hinge_pin();
+    }
+
+module hinge_cuts(fs, H) {
+    L = mm(fs[0]); w = TAB_W / 2 + hinge_clear; hl = w + PIN_L + 0.3;
+    ch = hinge_pin_d - 2 * PIN_FLAT + 0.2;                    // lead-in: lets the flatted pins through only at 90 deg
+    along_axis(fs, H, -L / 2 - 1, L / 2 + 1)                  // round the lower back edge about the axis
+        difference() { translate([0, -HR - 1]) square([HR + 1, HR + 1]); circle(r = HR, $fn = 96); }
+    for (tx = tab_xs(fs)) {
+        along_axis(fs, H, tx - w, tx + w) offset(r = hinge_clear) {
+            // the tab as the lid sees it while turning 0..90 deg: head, its
+            // tip swung round to the back, and the stem sweeping down and back
+            hull() { tab_head2d(); rotate(90) tab_head2d(); }
+            translate([-TAB_D, -HR - 1]) square([HR + 1 + TAB_D, HR + 1]);
+        }
+        along_axis(fs, H, tx - hl, tx + hl) {
+            circle(d = hinge_pin_d + hinge_play);
+            translate([-ch / 2, -HR - 1]) square([ch, HR + 1]);
+        }
+    }
+}
+
+// the lid's pose: hinged open by lid_open, or lifted by lift
+module lid_pose(fs, H, lift) let(a = hinge_axis(fs, H))
+    if (HINGE) translate([0, a[0], a[1]]) rotate([-lid_open, 0, 0]) translate([0, -a[0], -a[1]]) children();
+    else translate([0, 0, lift]) children();
+
+// Plinth: the bottom band of the body, up to just above the floor (its first big
+// solid layers), is set in
+// by plinth_inset with a 45 deg return above it (no overhang). The solid
+// floor shrinks more than the walls as it cools and pulls them in; that step
+// now lands on the plinth's edge instead of showing as a stray line.
+module plinth_cut(fs, z0, h) let(i = plinth_inset)
+    difference() {
+        translate([0, 0, z0 - 1]) linear_extrude(h + i + 1) offset(delta = 5) plan(fs);
+        hull() { slab(fs, z0 - 2, i); slab(fs, z0 + h, i); slab(fs, z0 + h + i + 0.5, -0.5); }
+    }
+
+// the same round the top of the lid, upside down: a band h deep below the top
+// face z1 is set in, with the 45 deg return underneath (the lid prints top up)
+module plinth_top_cut(fs, z1, h) let(i = plinth_inset)
+    difference() {
+        translate([0, 0, z1 - h - i]) linear_extrude(h + i + 1) offset(delta = 5) plan(fs);
+        hull() { slab(fs, z1 - h - i - 0.5, -0.5); slab(fs, z1 - h, i); slab(fs, z1 + 2, i); }
+    }
+
 module box_body(fs, H) {
     seam = H - LID_H;
     difference() {
         union() {
             linear_extrude(seam) plan(fs);
-            ridge(fs, seam - eps, RIM, SEAT);
+            // hinged: no ridge where the lid's back edge swings down past it
+            if (HINGE) front_of(fs, mm(fs[1]) / 2 - 2 * HR - 0.5) ridge(fs, seam - eps, RIM, SEAT);
+            else ridge(fs, seam - eps, RIM, SEAT);
         }
         translate([0, 0, floor_t]) linear_extrude(seam + SEAT) plan(fs, WALL);
         side_panels(fs, H);
+        if (plinth_inset > 0) plinth_cut(fs, 0, PLINTH_H);
     }
     side_panels(fs, H, true);
+    if (HINGE) hinge_tabs(fs, H);
 }
 
 // lid in box coordinates: it sits on the seam, H - LID_H. Its underside has
@@ -282,25 +452,31 @@ module box_body(fs, H) {
 module box_lid(fs, H, nf = 0) {
     seam = H - LID_H;
     a = [fs[0] - 2 * frame, fs[1] - 2 * frame];            // top area, studs
-    union() {
-        difference() {
-            translate([0, 0, seam]) linear_extrude(LID_H) plan(fs);
-            ridge(fs, seam - 1, RIM - lid_clear - 1, SEAT + lid_clear + 1);
+    difference() {
+        union() {
+            difference() {
+                translate([0, 0, seam]) linear_extrude(LID_H) plan(fs);
+                // hinged: the groove stops at the axis; behind it the lid is solid over the wall
+                if (HINGE) front_of(fs, mm(fs[1]) / 2 - HR) ridge(fs, seam - 1, RIM - lid_clear - 1, SEAT + lid_clear + 1);
+                else ridge(fs, seam - 1, RIM - lid_clear - 1, SEAT + lid_clear + 1);
+            }
+            translate([0, 0, seam]) linear_extrude(SEAT + lid_clear + eps) plan(fs, WALL + lid_clear);
         }
-        translate([0, 0, seam]) linear_extrude(SEAT + lid_clear + eps) plan(fs, WALL + lid_clear);
+        if (HINGE) hinge_cuts(fs, H);
+        if (plinth_inset > 0 && lid_plinth) plinth_top_cut(fs, H, PLINTH_H);
     }
     if (top_studs) for (x = cols(a[0]), y = cols(a[1])) translate([x, y, H - eps]) stud();
     else for (i = [0:1:nf - 1]) let(f = fig_spot(fs, nf, i))
         for (x = cols(fig_pad_x), y = cols(fig_pad_y)) translate([f[0] + x, f[1] + y, H - eps]) stud();
 }
 
-body_color = [0.80, 0.10, 0.10];
-lid_color  = [0.15, 0.15, 0.16];
+body_color = [0.55, 0.56, 0.58];   // mid gray
+lid_color  = [0.78, 0.79, 0.80];   // light gray, so the seam stays easy to see
 
 module box(n, lift = 0) {
     fs = foot_n(n); H = H_of(n);
     color(body_color) render() box_body(fs, H);
-    color(lid_color) translate([0, 0, lift]) render() box_lid(fs, H, figs_of(n));
+    color(lid_color) lid_pose(fs, H, lift) render() box_lid(fs, H, figs_of(n));
 }
 
 // ---------------------------------------------------------------------
@@ -328,9 +504,9 @@ module ghost_fig(ci) {
 module dressed_box(n) {
     fs = foot_n(n); c = car_n(n); H = H_of(n); nf = figs_of(n);
     box(n, lid_lift);
-    if (show_cars && $preview) translate([0, 0, H + stud_h + lid_lift]) {
-        // car centred on whole studs, against the back of the top area
-        translate([((fs[0] - c[1]) % 2) * PITCH / 2, (fs[1] / 2 - frame - c[0] / 2) * PITCH, 0]) ghost_car(c, n);
+    if (show_cars && $preview) lid_pose(fs, H, lid_lift) translate([0, 0, H + stud_h]) {
+        // car on whole studs, at the far end of the top area from the figures
+        translate(concat(car_spot(fs, c), 0)) ghost_car(c, n);
         if (nf > 0) for (i = [0:nf - 1])
             translate(concat(fig_spot(fs, nf, i), 0)) ghost_fig(n + i);
     }
@@ -358,6 +534,13 @@ for (n = [0:N - 1]) let(fs = foot_n(n))
     if (max(mm(fs[0]), mm(fs[1])) > max(bed_x, bed_y) || min(mm(fs[0]), mm(fs[1])) > min(bed_x, bed_y) || H_of(n) > bed_z)
         echo(str("WARNING: box ", n, " is too big for the printer bed"));
 if (corner_r > frame * PITCH - 1) echo("WARNING: corner_r is wider than the frame - corners will cut into the panels");
+if (HINGE && WALL < HR + 0.4) echo(str("WARNING: walls (", WALL, " mm) are too thin for the hinge - raise panel_depth or skin to make them at least ", HR + 0.4, " mm"));
+for (n = [0:N - 1]) let(fs = foot_n(n))
+    if (HINGE && tab_xs(fs)[1] < TAB_W / 2 + hinge_clear + PIN_L + 2)
+        echo(str("WARNING: box ", n, " is too short for hinge tabs ", hinge_from_end, " studs from each end - lower hinge_from_end"));
+for (n = [0:N - 1]) if (plinth_inset > 0 && PLINTH_H + plinth_inset > panel_z(H_of(n))[0])
+    echo(str("WARNING: box ", n, ": the plinth reaches up into the side panels - lower plinth_above"));
+if (plinth_inset > 0 && lid_plinth && PLINTH_H + plinth_inset > LID_H - 1.5) echo(str("WARNING: the lid band (", PLINTH_H, " + ", plinth_inset, " mm) leaves under 1.5 mm of full-width lid - lower plinth_above or floor_t, or turn off lid_plinth"));
 if (rise % 2 != 0) echo(str("NOTE: rise ", rise, " is odd - side panels of neighbouring rows will not line up"));
 for (n = [0:N - 1]) let(fs = foot_n(n), P = panel_z(H_of(n)), w = max([0, for (p = concat(panels(fs[0]), panels(fs[1]))) p[1]]))
     if (side_cols > 0 && w < side_cols)
