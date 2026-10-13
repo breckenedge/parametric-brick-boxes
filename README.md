@@ -12,6 +12,8 @@ studded panels on all four sides, and storage inside.
 - Minifig stand space beside each car (0-2 figures, in front, behind, or at either end).
 - Hinged lid on two pinned tabs at the back: friction holds it at any angle up to 90°,
   and it lifts off at 90°. Or set `lid_style = "seat"` for a plain lift-off lid.
+- Snaps shut on a springy latch tongue inside the front wall (`latch_count`, `latch_bump`
+  sets how firm the snap is).
 - Prints without supports. Print `stud_fit_test.scad` first to find your stud sizes, then
   `car_size = "coupon"` to check the whole fit.
 
