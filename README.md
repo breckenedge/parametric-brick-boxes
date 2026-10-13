@@ -16,6 +16,8 @@ studded panels on all four sides, and storage inside.
   (`detent_count`, `detent_len`; `detent_bump` sets how firm the snap is).
 - Prints without supports. Print `stud_fit_test.scad` first to find your stud sizes, then
   a small 6 x 5 box to check the whole fit.
+  For reference, in PLA+ on the author's printer, `stud_d = 5.00` (top) and
+  `side_stud_d = 4.90` (sides) clutch well.
 
 ## Use
 
