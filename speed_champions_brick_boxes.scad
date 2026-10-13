@@ -162,11 +162,13 @@ hinge_play = 0.05;      // [-0.1:0.05:0.4]
 // gap around the tabs in their slots
 hinge_clear = 0.25;     // [0.1:0.05:0.5]
 
-/* [Lid latch] */
-// snap latches inside the front wall: 1 = centred, 2 = a quarter in from each end (0 = off)
-latch_count = 1;        // [0:1:2]
-// how far each latch tongue has to bend to let the lid past - more = firmer snap
-latch_bump = 0.4;       // [0.1:0.05:0.8]
+/* [Lid detent] */
+// snap detents on the front lip: 1 = centred, 2 = a quarter in from each end (0 = off)
+detent_count = 1;       // [0:1:2]
+// detent length along the front, studs
+detent_len = 2;         // [1:1:6]
+// how far the front wall has to give to let the lid past - more = firmer snap
+detent_bump = 0.3;      // [0.1:0.05:0.6]
 
 /* [Printing] */
 bed_x = 250;
@@ -195,13 +197,8 @@ TAB_W = 6;              // tab thickness along the axis
 TAB_D = 6;              // tab stem depth in front of the axis: a solid block, buttressed down the inside of the back wall
 PIN_L = 1.5;            // pin length out of each tab face
 PIN_FLAT = 0.5;         // flat on top and bottom of each pin: prints clean, and only passes the lead-in at 90 deg
-LT_GAP = 1.6;           // latch tongue: gap behind the front wall (the lid's catch lip fills it)
-LT_T = 1.6;             // tongue thickness
-LT_W = PITCH;           // tongue width
-LT_TOP = 5.6;           // tongue top above the seam
-LT_Z = 3.2;             // bump centre above the seam
-LT_FLAT = 0.6;          // flat on the bump tip
-LT_C = 0.1;             // gap between tongue and catch lip
+DT_Z = 1.4;             // detent bead centre above the seam, on the inside of the wall ridge
+DT_FLAT = 0.6;          // flat on the bead tip
 eps = 0.01;
 $fn = 40;
 
@@ -424,35 +421,26 @@ module lid_pose(fs, H, lift) let(a = hinge_axis(fs, H))
     else translate([0, 0, lift]) children();
 
 // ---------------------------------------------------------------------
-//  Latch: a springy tongue stands up inside the front wall, on a block
-//  glued to the wall. Above the seam it rises into a pocket in the lid.
-//  A bump on its front face rides over the lid's catch lip (the strip of
-//  lid between pocket and wall) and clicks into a notch in it. Both bump
-//  faces are 45 deg, so it prints without supports and pulls open again.
+//  Detent: a bead along the inside of the front wall ridge clicks into a
+//  matching groove in the lid's plug. Closing, the plug's lower edge rides
+//  over the bead and the wall top springs out to let it by - the lid's own
+//  groove is still well clear of the ridge at that point. Both bead faces
+//  are 45 deg: no supports, and it pulls open again.
 //  Front coordinates: u = in from the front face, v = up.
 // ---------------------------------------------------------------------
-function latch_xs(fs) = latch_count == 1 ? [0] : latch_count == 2 ? [-mm(fs[0]) / 4, mm(fs[0]) / 4] : [];
-function latch_free(H) = max(3, min(8, H - LID_H - floor_t - 2 * (LT_GAP + LT_T)));   // tongue length below the seam
+function detent_xs(fs) = detent_count == 1 ? [0] : detent_count == 2 ? [-mm(fs[0]) / 4, mm(fs[0]) / 4] : [];
 
 module along_front(fs, x0, x1)
     translate([x0, -mm(fs[1]) / 2, 0]) rotate([90, 0, 90]) linear_extrude(x1 - x0) children();
 
-module latch_bump2d(seam) let(u = WALL + LT_GAP, b = latch_bump + LT_C, z = seam + LT_Z, f = LT_FLAT / 2)
-    polygon([[u + eps, z - b - f], [u - b, z - f], [u - b, z + f], [u + eps, z + b + f]]);
+module detent_bead2d(seam) let(u = WALL, b = detent_bump + lid_clear, z = seam + DT_Z, f = DT_FLAT / 2)
+    polygon([[u - eps, z - b - f], [u + b, z - f], [u + b, z + f], [u - eps, z + b + f]]);
 
-module latch_tongues(fs, H) let(seam = H - LID_H, u0 = WALL + LT_GAP, u1 = u0 + LT_T, zf = seam - latch_free(H), d = u1 - WALL)
-    for (x = latch_xs(fs)) along_front(fs, x - LT_W / 2, x + LT_W / 2) {
-        translate([u0, zf - eps]) square([LT_T, seam + LT_TOP - zf + eps]);
-        latch_bump2d(seam);
-        polygon([[WALL - eps, zf - d - d], [WALL - eps, zf], [u1, zf], [u1, zf - d]]);   // block, 45 deg underside
-    }
+module detent_beads(fs, H) let(l = detent_len * PITCH)
+    for (x = detent_xs(fs)) along_front(fs, x - l / 2, x + l / 2) detent_bead2d(H - LID_H);
 
-// the pocket leaves room behind the tongue for it to bend back past the lip
-module latch_cuts(fs, H) let(seam = H - LID_H, u0 = WALL + LT_GAP, u1 = u0 + LT_T)
-    for (x = latch_xs(fs)) along_front(fs, x - LT_W / 2 - 0.3, x + LT_W / 2 + 0.3) {
-        translate([u0 - LT_C, seam - 1]) square([LT_T + LT_C + 2 * latch_bump + 0.4, LT_TOP + 1.4]);
-        offset(delta = 0.15) latch_bump2d(seam);
-    }
+module detent_cuts(fs, H) let(l = detent_len * PITCH + 0.6)
+    for (x = detent_xs(fs)) along_front(fs, x - l / 2, x + l / 2) offset(delta = 0.1) detent_bead2d(H - LID_H);
 
 // Plinth: the bottom band of the body, up to just above the floor (its first big
 // solid layers), is set in
@@ -488,7 +476,7 @@ module box_body(fs, H) {
     }
     side_panels(fs, H, true);
     if (HINGE) hinge_tabs(fs, H);
-    latch_tongues(fs, H);
+    detent_beads(fs, H);
 }
 
 // lid in box coordinates: it sits on the seam, H - LID_H. Its underside has
@@ -508,7 +496,7 @@ module box_lid(fs, H, nf = 0) {
             translate([0, 0, seam]) linear_extrude(SEAT + lid_clear + eps) plan(fs, WALL + lid_clear);
         }
         if (HINGE) hinge_cuts(fs, H);
-        latch_cuts(fs, H);
+        detent_cuts(fs, H);
         if (plinth_inset > 0 && lid_plinth) plinth_top_cut(fs, H, PLINTH_H);
     }
     if (top_studs) for (x = cols(a[0]), y = cols(a[1])) translate([x, y, H - eps]) stud();
