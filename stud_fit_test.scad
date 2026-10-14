@@ -2,7 +2,7 @@
 //  Stud fit test
 // =====================================================================
 //
-//  One print finds the stud sizes for speed_champions_brick_boxes.scad.
+//  One print finds the stud sizes for parametric_brick_boxes.scad.
 //  An L-shaped strip, printed as modelled (base flat on the bed):
 //    - top: a 2 x 2 group of upright studs per diameter, like the lid
 //    - back wall: a 2 x 2 group of sideways studs per diameter, printed

@@ -1,8 +1,8 @@
 // =====================================================================
-//  Speed Champions brick boxes
+//  Parametric brick boxes
 // =====================================================================
 //
-//  One printable box per car, studded all over, made for building on with
+//  A printable storage box, studded all over, made for building on with
 //  real LEGO.
 //    - every dimension is LEGO units: footprints in studs (8 mm pitch,
 //      0.1 mm play per side), heights in stud rows (8 mm)
@@ -52,7 +52,7 @@ studs_w = 12;           // [5:1:30]
 side_rows = 2;          // [1:1:30]
 // extra stud rows for each row further back
 rise = 6;               // [0:1:12]
-// shelf row the box is for, 0 = front: each row back is rise stud rows taller, so the cars in back sit higher
+// shelf row the box is for, 0 = front: each row back is rise stud rows taller, so whatever stands on the boxes in back sits higher
 row = 0;                // [0:1:6]
 // rounding of the vertical edges, mm (the corner studs start 1.5 mm in)
 corner_r = 1;           // [0:0.25:1.5]
@@ -371,7 +371,7 @@ module box() {
 // ---------------------------------------------------------------------
 //  Output
 // ---------------------------------------------------------------------
-echo(str("\n==== Speed Champions brick box ====",
+echo(str("\n==== Parametric brick box ====",
     "\n  size     ", FS[0], " x ", FS[1], " studs (", round(mm(FS[0])), " x ", round(mm(FS[1])), " mm), ",
                      BH / PLATE, " plates (", BH, " mm) tall",
     "\n  row      ", row, ": side_rows ", side_rows, row > 0 ? str(" + ", row, " x rise ", rise) : "", " = ", ROWS, " stud rows + 1 on the lid\n"));

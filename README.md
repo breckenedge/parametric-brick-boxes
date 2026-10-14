@@ -1,15 +1,14 @@
-# Parametric Speed Champions display boxes
+# Parametric brick boxes
 
-Printable, parametric display boxes for LEGO Speed Champions (and similar) cars,
-written in OpenSCAD. One box per car: studded edge to edge on every side and on the
-lid, with storage inside.
+Printable, parametric storage boxes, LEGO-compatible and written in OpenSCAD:
+studded edge to edge on every side and on the lid, with storage inside.
 
 - Everything is in LEGO units: footprints in studs (8 mm), heights in stud rows (8 mm).
 - Box size is set directly in studs (`studs_l` x `studs_w`).
 - Every box is whole stud rows tall, with a row of studs round the lid band too, so the
   side studs of neighbouring boxes line up.
 - Set `row` for where the box will stand (0 = front): each row back is taller, so
-  the cars in back sit higher.
+  whatever stands on the boxes in back sits higher.
 - Hinged lid on two pinned tabs at the back: friction holds it at any angle up to 90°,
   and it lifts off at 90°.
 - Hollow lid: a thin studded top skin (`lid_top`) over an open underside, inside the
@@ -25,7 +24,7 @@ lid, with storage inside.
 
 ## Use
 
-Open `speed_champions_brick_boxes.scad` in OpenSCAD (a recent nightly with the
+Open `parametric_brick_boxes.scad` in OpenSCAD (a recent nightly with the
 Manifold backend renders much faster) and use the Customizer. Set the size and `row`,
 pick `part = print / body / lid / assembled`, then render and export.
 
@@ -37,5 +36,5 @@ pick `part = print / body / lid / assembled`, then render and export.
 [Creative Commons Attribution-ShareAlike 4.0 International](https://creativecommons.org/licenses/by-sa/4.0/)
 (CC BY-SA 4.0); see [LICENSE](LICENSE).
 
-LEGO® is a trademark of the LEGO Group, and Hot Wheels® and Mattel Brick Shop™ are
-trademarks of Mattel, none of which sponsor, authorize or endorse this project.
+LEGO® is a trademark of the LEGO Group, which does not sponsor, authorize or endorse
+this project.
