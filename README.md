@@ -3,6 +3,12 @@
 Printable, parametric storage boxes, LEGO-compatible and written in OpenSCAD:
 studded edge to edge on every side and on the lid, with storage inside.
 
+![A 21 x 12 stud box with its hinged lid open](images/open.png)
+
+| Closed | Print layout | Rows 0, 1 and 2 |
+|---|---|---|
+| ![Closed box, studded on every face](images/closed.png) | ![Body upright, lid inverted beside it](images/print.png) | ![Three boxes stepping up from front to back](images/lineup.png) |
+
 - Everything is in LEGO units: footprints in studs (8 mm), heights in stud rows (8 mm).
 - Box size is set directly in studs (`studs_l` x `studs_w`).
 - Every box is whole stud rows tall, with a row of studs round the lid band too, so the
