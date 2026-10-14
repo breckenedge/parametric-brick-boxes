@@ -10,7 +10,7 @@
 //      and a row round the lid band (not its back, which lands on the wall
 //      top at 90 deg)
 //    - a flat, hollow lid with studs standing on its top face, so plates press on
-//      and pry off easily - studs everywhere, or just pads for the minifigs
+//      and pry off easily (or a plain top, with top_studs off)
 //    - lid (the top band) over an open storage box, hinged on two tabs at
 //      the back (friction pins, holds any angle up to 90 deg, lifts off at
 //      90 deg)
@@ -20,10 +20,9 @@
 //  rows tall, so the side studs of neighbouring boxes line up.
 //
 //  Box size is studs_l x studs_w, the whole footprint, and nothing else
-//  changes it: the car and minifigs share the top. Sizes that suit common
-//  cars (car envelope incl. tyres / mirrors / wings; box with a 3-stud
-//  figure strip along the front or back - take 3 off studs_w with no
-//  figures):
+//  changes it. Sizes that suit common cars (car envelope incl. tyres /
+//  mirrors / wings; box with 3 studs spare along the front or back - take
+//  3 off studs_w for a snug fit):
 //                                                   car       box l x w
 //    6-wide era, 2015-2019                         7 x 17     17 x 10
 //    8-wide road car, 2020+                        9 x 21     21 x 12
@@ -38,8 +37,8 @@
 //    body  upright as modelled (open top up, flat floor on the bed), no
 //          supports
 //    lid   inverted: top down, open underside up. Its top studs land on
-//          the bed and need supports (or set top_studs off and
-//          fig_count = 0 for a flat top); everything else - the 45 deg
+//          the bed and need supports (or set top_studs off for a flat
+//          top); everything else - the 45 deg
 //          groove edge, hinge slots, detent pocket - opens upwards
 //  Hinge: the body's tabs print upright with flat-bottomed pins. To fit the
 //  lid, hold it upright (open 90 deg) behind the tabs and slide it forward
@@ -70,25 +69,11 @@ row = 0;                // [0:1:6]
 // rounding of the vertical edges, mm (the corner studs start 1.5 mm in)
 corner_r = 1;           // [0:0.25:1.5]
 
-/* [Minifigs] */
-// minifigs beside the car
-fig_count = 1;          // [0:1:2]
-// studs of the top the figures stand in, beside the car (does not change the box size)
-fig_strip = 3;          // [2:1:6]
-// where the figures stand, seen from the front: N = back, S = front, E = right end, W = left end; corners stand at that end of the back or front
-fig_dir = "SE";        // [NE, N, NW, W, SW, S, SE, E]
-
 /* [Top studs] */
-// studs over the whole top (off = plain, with stud pads for the minifigs only)
+// studs over the whole top (off = plain)
 top_studs = true;
-// minifig stud pad when top_studs is off, studs across
-fig_pad_x = 2;          // [1:1:4]
-// ... and front to back
-fig_pad_y = 2;          // [1:1:4]
 
 /* [Side studs] */
-// side studs: grid; checker = every other stud (still takes plates); diagonal = lattice at 45 deg
-stud_pattern = "grid";  // [grid, checker, diagonal]
 // studs across each side, centred (0 = edge to edge)
 side_cols = 0;          // [0:1:30]
 studs_front = true;
@@ -142,10 +127,6 @@ bed_z = 250;
 PITCH = 8;              // stud pitch, and the height of a side stud row
 PLATE = 3.2;            // plate height (brick = 3 plates)
 PLAY = 0.1;             // LEGO play per side: n studs = n * 8 - 0.2 mm
-// the figure strip runs along the front or back of the car, or across one end
-ENDS = fig_dir == "E" || fig_dir == "W";                       // strip across an end, not along the front or back
-FSIGN = ENDS ? (fig_dir == "E" ? 1 : -1) : (fig_dir[0] == "N" ? 1 : -1);   // which way the strip lies from the car
-FALIGN = len(fig_dir) == 2 ? (fig_dir[1] == "E" ? 1 : -1) : 0;          // front / back: figures at the right end, left end or centred
 LID_H = PITCH;          // lid band: one row of side studs
 WALL = wall;
 RIM = 1.2;              // flat lid rim on the wall top, outside the seat
@@ -171,13 +152,8 @@ function mm(n) = n * PITCH - 2 * PLAY;
 //  Size
 // ---------------------------------------------------------------------
 FS = [max(5, round(studs_l)), max(5, round(studs_w))];   // footprint, studs
-NF = max(0, min(2, fig_count));
 ROWS = side_rows + row * rise;   // side stud rows under the lid band
 BH = (ROWS + 1) * PITCH;         // box height, mm: those rows and the lid band's
-// the car the top leaves room for, in studs: [w, l] - the top less the
-// figure strip. Only used for the console and a warning.
-CAR = let(s = NF > 0 ? fig_strip : 0)
-    ENDS ? [FS[1], max(1, FS[0] - s)] : [max(1, FS[1] - s), FS[0]];
 
 // ---------------------------------------------------------------------
 //  Studs
@@ -186,23 +162,7 @@ function cols(n) = [for (i = [0:n - 1]) (i - (n - 1) / 2) * PITCH];
 
 // side stud centres on a face w wide, h high, relative to its centre: [[x, z], ...]
 function face_pts(w, h) = let(nx = round(w / PITCH), nz = round(h / PITCH))
-    stud_pattern == "diagonal" ?
-        let(n = ceil((w + h) / PITCH), s = PITCH / sqrt(2))
-        [for (a = [-n:n], b = [-n:n]) let(x = (a - b) * s, z = (a + b) * s)
-            if (abs(x) <= w / 2 - PITCH / 2 + eps && abs(z) <= h / 2 - PITCH / 2 + eps) [x, z]]
-    : [for (i = [0:nx - 1], k = [0:nz - 1]) if (stud_pattern != "checker" || (i + k) % 2 == 0)
-        [(i - (nx - 1) / 2) * PITCH, (k - (nz - 1) / 2) * PITCH]];
-
-// snap a pad of n studs centred near f onto the stud grid of an a-stud area
-function snap(f, a, n) = let(o = (a % 2 == 0 ? PITCH / 2 : 0) + (n % 2 == 0 ? PITCH / 2 : 0))
-    round((f - o) / PITCH) * PITCH + o;
-// centre of minifig i of nf in the strip; two stand side by side (one behind the other at an end)
-function fig_spot(fs, nf, i) = let(g = nf == 1 ? 0 : (i - 0.5) * 3 * PITCH)
-    ENDS ? [snap(FSIGN * (fs[0] - fig_strip) / 2 * PITCH, fs[0], fig_pad_x), snap(g, fs[1], fig_pad_y)]
-    : [let(half = (nf == 1 ? 0 : 1.5 * PITCH) + fig_pad_x * PITCH / 2,      // half the group's width
-           cx = FALIGN * (fs[0] * PITCH / 2 - half))
-       snap(cx + g, fs[0], fig_pad_x),
-       snap(FSIGN * (fs[1] - fig_strip) / 2 * PITCH, fs[1], fig_pad_y)];
+    [for (i = [0:nx - 1], k = [0:nz - 1]) [(i - (nx - 1) / 2) * PITCH, (k - (nz - 1) / 2) * PITCH]];
 
 // stud with a 0.3 mm chamfer on the tip, so plates find it and press on easily
 module stud_shape(d) {
@@ -361,7 +321,6 @@ module detent_cuts(fs, H) let(l = detent_len * PITCH + 0.6, s = H - LID_H)
         offset(delta = 0.1) detent_bead2d(s);
     }
 
-
 // ---------------------------------------------------------------------
 //  Lid hollow: everything under the top skin inside the outer lip (the band
 //  with the sloped groove edge) is open, except solid blocks round the
@@ -395,7 +354,7 @@ module box_body(fs, H) {
 // lid in box coordinates: it sits on the seam, H - LID_H. Its underside has
 // a 45 deg groove that drops over the wall ridge and centres it; inside that
 // it is hollow. It prints inverted, top down.
-module box_lid(fs, H, nf = 0) {
+module box_lid(fs, H) {
     seam = H - LID_H;
     difference() {
         union() {
@@ -413,8 +372,6 @@ module box_lid(fs, H, nf = 0) {
     // round the lid band, but not the back, which lands on the wall top at 90 deg
     side_studs(fs, H, seam, H, false, true);
     if (top_studs) for (x = cols(fs[0]), y = cols(fs[1])) translate([x, y, H - eps]) stud();
-    else for (i = [0:1:nf - 1]) let(f = fig_spot(fs, nf, i))
-        for (x = cols(fig_pad_x), y = cols(fig_pad_y)) translate([f[0] + x, f[1] + y, H - eps]) stud();
 }
 
 body_color = [0.55, 0.56, 0.58];   // mid gray
@@ -422,7 +379,7 @@ lid_color  = [0.78, 0.79, 0.80];   // light gray, so the seam stays easy to see
 
 module box() {
     color(body_color) render() box_body(FS, BH);
-    color(lid_color) lid_pose(FS, BH) render() box_lid(FS, BH, NF);
+    color(lid_color) lid_pose(FS, BH) render() box_lid(FS, BH);
 }
 
 // ---------------------------------------------------------------------
@@ -431,18 +388,15 @@ module box() {
 echo(str("\n==== Speed Champions brick box ====",
     "\n  size     ", FS[0], " x ", FS[1], " studs (", round(mm(FS[0])), " x ", round(mm(FS[1])), " mm), ",
                      BH / PLATE, " plates (", BH, " mm) tall",
-    "\n  row      ", row, ": side_rows ", side_rows, row > 0 ? str(" + ", row, " x rise ", rise) : "", " = ", ROWS, " stud rows + 1 on the lid",
-    "\n  top      room for a ", CAR[1], " x ", CAR[0], " stud car and ", NF, " minifig", NF == 1 ? "" : "s", "\n"));
+    "\n  row      ", row, ": side_rows ", side_rows, row > 0 ? str(" + ", row, " x rise ", rise) : "", " = ", ROWS, " stud rows + 1 on the lid\n"));
 if (max(mm(FS[0]), mm(FS[1])) > max(bed_x, bed_y) || min(mm(FS[0]), mm(FS[1])) > min(bed_x, bed_y) || BH > bed_z)
     echo("WARNING: the box is too big for the printer bed");
-if (NF > 0 && min(CAR[0], CAR[1]) < 3)
-    echo(str("WARNING: only ", CAR[1], " x ", CAR[0], " studs are left for the car beside the figures - make the box bigger or lower fig_strip"));
 if (WALL < 3.2) echo(str("NOTE: ", WALL, " mm walls leave a ", SEAT, " mm seat ridge and ", DT_U - lid_clear - detent_bump - 0.1, " mm of lid skin over the detent"));
 if (tab_xs(FS)[1] < TAB_W / 2 + hinge_clear + PIN_L + 2)
     echo(str("WARNING: the box is too short for hinge tabs ", hinge_from_end, " studs from each end - lower hinge_from_end"));
 
-LID_TIP = top_studs || NF > 0 ? stud_h - eps : 0;   // lid printed inverted: its top studs reach the bed
-module lid_print() translate([0, 0, BH + LID_TIP]) rotate([180, 0, 0]) box_lid(FS, BH, NF);
+LID_TIP = top_studs ? stud_h - eps : 0;   // lid printed inverted: its top studs reach the bed
+module lid_print() translate([0, 0, BH + LID_TIP]) rotate([180, 0, 0]) box_lid(FS, BH);
 if (part == "assembled") box();
 else if (part == "body") color(body_color) box_body(FS, BH);
 else if (part == "lid") color(lid_color) lid_print();

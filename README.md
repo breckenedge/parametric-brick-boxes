@@ -11,7 +11,6 @@ lid, with storage inside.
   side studs of neighbouring boxes line up.
 - Set `row` for where the box will stand (0 = front): each row back is taller, so
   the cars in back sit higher.
-- Minifig stand space beside each car (0-2 figures, placed by compass direction: N, NE, E, SE, S, SW, W or NW).
 - Hinged lid on two pinned tabs at the back: friction holds it at any angle up to 90°,
   and it lifts off at 90°.
 - Hollow lid: a thin studded top skin (`lid_top`) over an open underside, inside the
