@@ -205,7 +205,7 @@ TAB_D = 6;              // tab stem depth in front of the axis: a solid block, b
 PIN_L = 1.5;            // pin length out of each tab face
 PIN_FLAT = 0.5;         // flat on top and bottom of each pin: prints clean, and only passes the lead-in at 90 deg
 DT_U = min(2, WALL - 1.2);   // detent post: its outer face, in from the front face (the lid skin outside it)
-DT_V = 2.6;             // ... and the height of that vertical face above the seam
+DT_V = 2.2;             // ... and the height of that vertical face above the seam
 DT_Z = 1.4;             // detent bead centre above the seam, on the post's outer face
 DT_FLAT = 0.6;          // flat on the bead tip
 eps = 0.01;
@@ -441,12 +441,16 @@ function detent_xs(fs) = detent_count == 1 ? [0] : detent_count == 2 ? [-mm(fs[0
 module along_front(fs, x0, x1)
     translate([x0, -mm(fs[1]) / 2, 0]) rotate([90, 0, 90]) linear_extrude(x1 - x0) children();
 
-DT_TOP = DT_V + max(DT_U, WALL - TIP) - DT_U;    // post height above the seam
+DT_TOP = max(SEAT, DT_V + 0.4);   // post top: level with the ridge
 
-// the post, from its vertical outer face up a 45 deg slope to a flat tip on the inner face;
-// relief widens the top inwards (the lid's cut, over the room the wall needs to bow in)
-module detent_post2d(s, relief = 0) let(t = max(DT_U, WALL - TIP))
-    polygon([[DT_U, s - 1], [DT_U, s + DT_V], [t, s + DT_TOP], [WALL + relief, s + DT_TOP], [WALL + relief, s - 1]]);
+// the post: vertical outer face, a 45 deg chamfer, then flat to the inner face
+module detent_post2d(s) let(c = DT_U + DT_TOP - DT_V)
+    polygon([[DT_U, s - 1], [DT_U, s + DT_V], [c, s + DT_TOP], [WALL, s + DT_TOP], [WALL, s - 1]]);
+
+// the lid's pocket over it: the post widened inwards by relief (room for the wall to bow in),
+// under a 45 deg gable so the lid prints without bridging
+module detent_pocket2d(s, relief) let(c = DT_U + DT_TOP - DT_V, w = WALL + relief, m = (c + w) / 2)
+    polygon([[DT_U, s - 1], [DT_U, s + DT_V], [c, s + DT_TOP], [m, s + DT_TOP + (w - c) / 2], [w, s + DT_TOP], [w, s - 1]]);
 
 module detent_bead2d(s) let(b = detent_bump + lid_clear, z = s + DT_Z, f = DT_FLAT / 2)
     polygon([[DT_U + eps, z - b - f], [DT_U - b, z - f], [DT_U - b, z + f], [DT_U + eps, z + b + f]]);
@@ -465,7 +469,7 @@ module detent_fill(fs, H) let(l = detent_len * PITCH, s = H - LID_H)
 
 module detent_cuts(fs, H) let(l = detent_len * PITCH + 0.6, s = H - LID_H)
     for (x = detent_xs(fs)) along_front(fs, x - l / 2, x + l / 2) {
-        offset(delta = lid_clear) detent_post2d(s, detent_bump + 0.2);
+        offset(delta = lid_clear) detent_pocket2d(s, detent_bump + 0.2);
         offset(delta = 0.1) detent_bead2d(s);
     }
 
