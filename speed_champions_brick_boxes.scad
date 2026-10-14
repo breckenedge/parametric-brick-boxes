@@ -74,8 +74,6 @@ corner_r = 1;           // [0:0.25:1.5]
 top_studs = true;
 
 /* [Side studs] */
-// studs across each side, centred (0 = edge to edge)
-side_cols = 0;          // [0:1:30]
 studs_front = true;
 studs_back = true;
 studs_left = true;
@@ -186,7 +184,7 @@ module side_studs(fs, H, z0, z1, back = true, top = false) {
     faces = [[studs_front, 0, W / 2, fs[0]], [studs_back && back, 180, W / 2, fs[0]],
              [studs_right, 90, L / 2, fs[1]], [studs_left, -90, L / 2, fs[1]]];
     for (f = faces) if (f[0]) rotate(f[1]) translate([0, -f[2], 0])
-        for (q = face_pts((side_cols > 0 ? min(side_cols, f[3]) : f[3]) * PITCH, H))
+        for (q = face_pts(f[3] * PITCH, H))
             let(z = H / 2 + q[1]) if (z - r > z0 && z + r < z1)
                 translate([q[0], eps, z]) rotate([90, 0, 0]) side_stud(top);
 }
