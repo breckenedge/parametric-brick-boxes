@@ -26,8 +26,7 @@ studded panels on all four sides, and storage inside.
 
 Open `speed_champions_brick_boxes.scad` in OpenSCAD (a recent nightly with the
 Manifold backend renders much faster) and use the Customizer. Set the size and `row`,
-then choose
-`part = print / body / lid / assembled`, then render and export.
+pick `part = print / body / lid / assembled`, then render and export.
 
 `archive/` holds an earlier, decorative pillar version.
 
