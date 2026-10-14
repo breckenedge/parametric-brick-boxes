@@ -34,16 +34,19 @@
 //    Mattel Brick Shop Speed Series, 1:32         10 x 22     22 x 13
 //    test print: checks studs and lid fit              -      6 x 5
 //
-//  Printing, no supports:
-//    body  upright as modelled (open top up, flat floor on the bed)
-//    lid   top up: a 45 deg groove in its underside drops over a
-//          ridge on the wall tops and centres itself
-//  Hinge: the body's tabs print upright with flat-bottomed pins; the lid's
-//  slots, pin holes and lead-ins all open downwards. To fit the lid, hold it
-//  upright (open 90 deg) behind the tabs and slide it forward onto the pins,
-//  then close it. Tune hinge_play for stiffness.
+//  Printing:
+//    body  upright as modelled (open top up, flat floor on the bed), no
+//          supports
+//    lid   inverted: top down, open underside up. Its top studs land on
+//          the bed and need supports (or set top_studs off and
+//          fig_count = 0 for a flat top); everything else - the 45 deg
+//          groove edge, hinge slots, detent pocket - opens upwards
+//  Hinge: the body's tabs print upright with flat-bottomed pins. To fit the
+//  lid, hold it upright (open 90 deg) behind the tabs and slide it forward
+//  onto the pins, then close it. Tune hinge_play for stiffness.
 //  Side studs print as short horizontal pegs, with a small flat shaved off
-//  their undersides (side_stud_flat) so the worst of the overhang is gone.
+//  the side facing down as printed (side_stud_flat) so the worst of the
+//  overhang is gone.
 //  Print stud_fit_test.scad, then a 6 x 5 box, to tune stud_d / side_stud_d / lid_clear.
 //  Set row for where the box stands on the shelf, then export with part = print / body / lid.
 // =====================================================================
@@ -208,22 +211,24 @@ module stud_shape(d) {
 }
 module stud() stud_shape(stud_d);
 // wall stud: local -y ends up pointing down, so that is where the flat goes
-module side_stud() intersection() {
+// (or +y, up, for the lid, which prints inverted)
+module side_stud(top = false) intersection() {
     stud_shape(side_stud_d);
-    translate([-side_stud_d, -side_stud_d / 2 + side_stud_flat, -1]) cube([2 * side_stud_d, 2 * side_stud_d, stud_h + 2]);
+    mirror([0, top ? 1 : 0, 0])
+        translate([-side_stud_d, -side_stud_d / 2 + side_stud_flat, -1]) cube([2 * side_stud_d, 2 * side_stud_d, stud_h + 2]);
 }
 
 // one stud grid over each whole side, body and lid band together, standing
 // straight off the wall. Each part takes the studs between z0 and z1; any
 // that would straddle the seam are left out.
-module side_studs(fs, H, z0, z1, back = true) {
+module side_studs(fs, H, z0, z1, back = true, top = false) {
     L = mm(fs[0]); W = mm(fs[1]); r = side_stud_d / 2;
     faces = [[studs_front, 0, W / 2, fs[0]], [studs_back && back, 180, W / 2, fs[0]],
              [studs_right, 90, L / 2, fs[1]], [studs_left, -90, L / 2, fs[1]]];
     for (f = faces) if (f[0]) rotate(f[1]) translate([0, -f[2], 0])
         for (q = face_pts((side_cols > 0 ? min(side_cols, f[3]) : f[3]) * PITCH, H))
             let(z = H / 2 + q[1]) if (z - r > z0 && z + r < z1)
-                translate([q[0], eps, z]) rotate([90, 0, 0]) side_stud();
+                translate([q[0], eps, z]) rotate([90, 0, 0]) side_stud(top);
 }
 
 // ---------------------------------------------------------------------
@@ -389,7 +394,7 @@ module box_body(fs, H) {
 
 // lid in box coordinates: it sits on the seam, H - LID_H. Its underside has
 // a 45 deg groove that drops over the wall ridge and centres it; inside that
-// it is hollow. It prints top up, the hollow bridged by the top skin.
+// it is hollow. It prints inverted, top down.
 module box_lid(fs, H, nf = 0) {
     seam = H - LID_H;
     difference() {
@@ -406,7 +411,7 @@ module box_lid(fs, H, nf = 0) {
         lid_hollow(fs, H);
     }
     // round the lid band, but not the back, which lands on the wall top at 90 deg
-    side_studs(fs, H, seam, H, false);
+    side_studs(fs, H, seam, H, false, true);
     if (top_studs) for (x = cols(fs[0]), y = cols(fs[1])) translate([x, y, H - eps]) stud();
     else for (i = [0:1:nf - 1]) let(f = fig_spot(fs, nf, i))
         for (x = cols(fig_pad_x), y = cols(fig_pad_y)) translate([f[0] + x, f[1] + y, H - eps]) stud();
@@ -436,11 +441,12 @@ if (WALL < 3.2) echo(str("NOTE: ", WALL, " mm walls leave a ", SEAT, " mm seat r
 if (tab_xs(FS)[1] < TAB_W / 2 + hinge_clear + PIN_L + 2)
     echo(str("WARNING: the box is too short for hinge tabs ", hinge_from_end, " studs from each end - lower hinge_from_end"));
 
-LID_Z = -(BH - LID_H);       // lid's lowest point onto the bed
+LID_TIP = top_studs || NF > 0 ? stud_h - eps : 0;   // lid printed inverted: its top studs reach the bed
+module lid_print() translate([0, 0, BH + LID_TIP]) rotate([180, 0, 0]) box_lid(FS, BH, NF);
 if (part == "assembled") box();
 else if (part == "body") color(body_color) box_body(FS, BH);
-else if (part == "lid") color(lid_color) translate([0, 0, LID_Z]) box_lid(FS, BH, NF);
-else {   // print: body and lid side by side, both right way up
+else if (part == "lid") color(lid_color) lid_print();
+else {   // print: body upright and lid inverted, side by side
     color(body_color) box_body(FS, BH);
-    color(lid_color) translate([0, mm(FS[1]) + 15, LID_Z]) box_lid(FS, BH, NF);
+    color(lid_color) translate([0, mm(FS[1]) + 15, 0]) lid_print();
 }

@@ -19,7 +19,8 @@ lid, with storage inside.
 - Snaps shut on a detent: a bead on the front wall top clicks into the lid; squeeze the
   middle of the box front to release it (`detent_count`, `detent_len`; `detent_bump` sets
   how firm the snap is).
-- Prints without supports. Print `stud_fit_test.scad` first to find your stud sizes, then
+- The body prints upright without supports; the lid prints inverted (top down), its top
+  studs on supports. Print `stud_fit_test.scad` first to find your stud sizes, then
   a small 6 x 5 box to check the whole fit.
   For reference, in PLA+ on the author's printer, `stud_d = 5.05` (top) and
   `side_stud_d = 5.00` (sides) clutch well.
