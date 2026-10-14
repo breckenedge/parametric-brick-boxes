@@ -104,8 +104,8 @@ side_stud_d = 4.85;     // [4.6:0.05:5.1]
 side_stud_flat = 0.4;   // [0:0.1:1]
 
 /* [Box construction] */
-// wall thickness, mm
-wall = 4.8;             // [2.4:0.4:6]
+// wall thickness, mm (under 3.2 the lid's seat ridge and the skin over the detent get thin)
+wall = 3.2;             // [2.4:0.4:6]
 // floor thickness (3.2 = 1 plate)
 floor_t = 3.2;          // [1.6:0.8:6.4]
 // lift-off lid: play between lid groove and wall ridge
@@ -268,7 +268,7 @@ module tab2d() {
     translate([-TAB_D, -HR - eps]) square([TAB_D, HR + eps]);
     let(uw = HR - WALL, d = uw + TAB_D)          // buttress under the part of the stem that overhangs the inside
         if (d > 0) polygon(uw < 0 ? [[-TAB_D, -HR + eps], [0, -HR + eps], [0, -HR - d], [uw, -HR - d]]
-                                  : [[-TAB_D, -HR + eps], [uw, -HR + eps], [uw, -HR - d]]);
+                                  : [[-TAB_D, -HR + eps], [0, -HR + eps], [0, -HR], [uw, -HR], [uw, -HR - d]]);   // flush with the seam behind the axis, where the lid lands at 90 deg
 }
 
 // pin along +z with flats on local x (they end up top and bottom), cone tip
@@ -422,7 +422,7 @@ if (max(mm(FS[0]), mm(FS[1])) > max(bed_x, bed_y) || min(mm(FS[0]), mm(FS[1])) >
     echo("WARNING: the box is too big for the printer bed");
 if (NF > 0 && min(CAR[0], CAR[1]) < 3)
     echo(str("WARNING: only ", CAR[1], " x ", CAR[0], " studs are left for the car beside the figures - make the box bigger or lower fig_strip"));
-if (HINGE && WALL < HR + 0.4) echo(str("WARNING: walls (", WALL, " mm) are too thin for the hinge - make wall at least ", HR + 0.4, " mm"));
+if (WALL < 3.2) echo(str("NOTE: ", WALL, " mm walls leave a ", SEAT, " mm seat ridge and ", DT_U - lid_clear - detent_bump - 0.1, " mm of lid skin over the detent"));
 if (HINGE && tab_xs(FS)[1] < TAB_W / 2 + hinge_clear + PIN_L + 2)
     echo(str("WARNING: the box is too short for hinge tabs ", hinge_from_end, " studs from each end - lower hinge_from_end"));
 
