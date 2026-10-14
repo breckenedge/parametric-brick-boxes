@@ -5,8 +5,7 @@ written in OpenSCAD. One box per car: studded edge to edge on every side and on 
 lid, with storage inside.
 
 - Everything is in LEGO units: footprints in studs (8 mm), heights in stud rows (8 mm).
-- Box size is set directly in studs (`studs_l` x `studs_w`), and nothing else changes it; the
-  file header lists sizes that suit 6-wide, 8-wide, F1 and other cars.
+- Box size is set directly in studs (`studs_l` x `studs_w`).
 - Every box is whole stud rows tall, with a row of studs round the lid band too, so the
   side studs of neighbouring boxes line up.
 - Set `row` for where the box will stand (0 = front): each row back is taller, so

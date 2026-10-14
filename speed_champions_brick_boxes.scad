@@ -19,19 +19,7 @@
 //  row back (see row), plus the lid band's row. Every box is whole stud
 //  rows tall, so the side studs of neighbouring boxes line up.
 //
-//  Box size is studs_l x studs_w, the whole footprint, and nothing else
-//  changes it. Sizes that suit common cars (car envelope incl. tyres /
-//  mirrors / wings; box with 3 studs spare along the front or back - take
-//  3 off studs_w for a snug fit):
-//                                                   car       box l x w
-//    6-wide era, 2015-2019                         7 x 17     17 x 10
-//    8-wide road car, 2020+                        9 x 21     21 x 12
-//    Le Mans / GT racers, pickups                  9 x 24     24 x 12
-//    F1 2020-2024, F1 Academy                      9 x 23     23 x 12
-//    2025+ F1 grid                                10 x 27     27 x 13
-//    F1 Collectible Race Cars (71049)              5 x 11     11 x 8
-//    Mattel Brick Shop Speed Series, 1:32         10 x 22     22 x 13
-//    test print: checks studs and lid fit              -      6 x 5
+//  Box size is studs_l x studs_w, the whole footprint.
 //
 //  Printing:
 //    body  upright as modelled (open top up, flat floor on the bed), no
@@ -56,7 +44,7 @@ part = "print";         // [print, body, lid, assembled]
 lid_open = 0;           // [0:5:90]
 
 /* [Box size] */
-// box length, left to right, studs (the whole footprint - see the size table at the top)
+// box length, left to right, studs (the whole footprint)
 studs_l = 21;           // [5:1:40]
 // box width, front to back, studs
 studs_w = 12;           // [5:1:30]
