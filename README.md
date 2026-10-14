@@ -7,6 +7,8 @@ studded panels on all four sides, and storage inside.
 - Everything is in LEGO units: footprints in studs (8 mm), heights in plates (3.2 mm).
 - Box size is set directly in studs (`studs_l` x `studs_w`), and nothing else changes it; the
   file header lists sizes that suit 6-wide, 8-wide, F1 and other cars.
+- `frame = 0` drops the borders: studs edge to edge over every face, a row round the lid
+  band too, no recessed panels, and the box is whole stud rows tall.
 - Boxes are packed onto your shelf in rows, each row taller than the one in front, so
   the cars in back sit higher.
 - Minifig stand space beside each car (0-2 figures, placed by compass direction: N, NE, E, SE, S, SW, W or NW).
