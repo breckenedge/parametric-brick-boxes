@@ -14,8 +14,9 @@ studded panels on all four sides, and storage inside.
 - Minifig stand space beside each car (0-2 figures, placed by compass direction: N, NE, E, SE, S, SW, W or NW).
 - Hinged lid on two pinned tabs at the back: friction holds it at any angle up to 90°,
   and it lifts off at 90°. Or set `lid_style = "seat"` for a plain lift-off lid.
-- Snaps shut on a detent: a bead inside the front lip clicks into a groove in the lid
-  (`detent_count`, `detent_len`; `detent_bump` sets how firm the snap is).
+- Snaps shut on a detent: a bead on the front wall top clicks into the lid; squeeze the
+  middle of the box front to release it (`detent_count`, `detent_len`; `detent_bump` sets
+  how firm the snap is).
 - Prints without supports. Print `stud_fit_test.scad` first to find your stud sizes, then
   a small 6 x 5 box to check the whole fit.
   For reference, in PLA+ on the author's printer, `stud_d = 5.05` (top) and

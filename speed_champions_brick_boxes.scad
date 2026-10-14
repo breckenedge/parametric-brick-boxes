@@ -166,11 +166,11 @@ hinge_play = 0.05;      // [-0.1:0.05:0.4]
 hinge_clear = 0.25;     // [0.1:0.05:0.5]
 
 /* [Lid detent] */
-// snap detents on the front lip: 1 = centred, 2 = a quarter in from each end (0 = off)
+// snap detents on the front wall top - squeeze the box front there to open: 1 = centred, 2 = a quarter in from each end (0 = off)
 detent_count = 1;       // [0:1:2]
 // detent length along the front, studs
 detent_len = 2;         // [1:1:6]
-// how far the front wall has to give to let the lid past - more = firmer snap
+// how far the front wall has to bow in to let the lid go - more = firmer snap, harder squeeze
 detent_bump = 0.3;      // [0.1:0.05:0.6]
 
 /* [Printing] */
@@ -204,7 +204,9 @@ TAB_W = 6;              // tab thickness along the axis
 TAB_D = 6;              // tab stem depth in front of the axis: a solid block, buttressed down the inside of the back wall
 PIN_L = 1.5;            // pin length out of each tab face
 PIN_FLAT = 0.5;         // flat on top and bottom of each pin: prints clean, and only passes the lead-in at 90 deg
-DT_Z = 1.4;             // detent bead centre above the seam, on the inside of the wall ridge
+DT_U = min(2, WALL - 1.2);   // detent post: its outer face, in from the front face (the lid skin outside it)
+DT_V = 2.6;             // ... and the height of that vertical face above the seam
+DT_Z = 1.4;             // detent bead centre above the seam, on the post's outer face
 DT_FLAT = 0.6;          // flat on the bead tip
 eps = 0.01;
 $fn = 40;
@@ -424,11 +426,14 @@ module lid_pose(fs, H, lift) let(a = hinge_axis(fs, H))
     else translate([0, 0, lift]) children();
 
 // ---------------------------------------------------------------------
-//  Detent: a bead along the inside of the front wall ridge clicks into a
-//  matching groove in the lid's plug. Closing, the plug's lower edge rides
-//  over the bead and the wall top springs out to let it by - the lid's own
-//  groove is still well clear of the ridge at that point. Both bead faces
-//  are 45 deg: no supports, and it pulls open again.
+//  Detent, squeeze to open: a catch post stands on the front wall top, its
+//  outer face set DT_U in from the outside, with a bead facing out. The
+//  bead clicks into a groove in the lid's front skin, which comes down
+//  outside the post. Squeeze the front of the box and the wall top bows
+//  in, pulling the bead out of the groove, and the lid lifts free; the lid's
+//  plug is cut back behind the post to give the wall room. Closing, the
+//  skin rides down the bead and pushes the wall top in the same way. Every
+//  face is vertical or 45 deg: no supports.
 //  Front coordinates: u = in from the front face, v = up.
 // ---------------------------------------------------------------------
 function detent_xs(fs) = detent_count == 1 ? [0] : detent_count == 2 ? [-mm(fs[0]) / 4, mm(fs[0]) / 4] : [];
@@ -436,14 +441,33 @@ function detent_xs(fs) = detent_count == 1 ? [0] : detent_count == 2 ? [-mm(fs[0
 module along_front(fs, x0, x1)
     translate([x0, -mm(fs[1]) / 2, 0]) rotate([90, 0, 90]) linear_extrude(x1 - x0) children();
 
-module detent_bead2d(seam) let(u = WALL, b = detent_bump + lid_clear, z = seam + DT_Z, f = DT_FLAT / 2)
-    polygon([[u - eps, z - b - f], [u + b, z - f], [u + b, z + f], [u - eps, z + b + f]]);
+DT_TOP = DT_V + max(DT_U, WALL - TIP) - DT_U;    // post height above the seam
 
-module detent_beads(fs, H) let(l = detent_len * PITCH)
-    for (x = detent_xs(fs)) along_front(fs, x - l / 2, x + l / 2) detent_bead2d(H - LID_H);
+// the post, from its vertical outer face up a 45 deg slope to a flat tip on the inner face;
+// relief widens the top inwards (the lid's cut, over the room the wall needs to bow in)
+module detent_post2d(s, relief = 0) let(t = max(DT_U, WALL - TIP))
+    polygon([[DT_U, s - 1], [DT_U, s + DT_V], [t, s + DT_TOP], [WALL + relief, s + DT_TOP], [WALL + relief, s - 1]]);
 
-module detent_cuts(fs, H) let(l = detent_len * PITCH + 0.6)
-    for (x = detent_xs(fs)) along_front(fs, x - l / 2, x + l / 2) offset(delta = 0.1) detent_bead2d(H - LID_H);
+module detent_bead2d(s) let(b = detent_bump + lid_clear, z = s + DT_Z, f = DT_FLAT / 2)
+    polygon([[DT_U + eps, z - b - f], [DT_U - b, z - f], [DT_U - b, z + f], [DT_U + eps, z + b + f]]);
+
+// body: the ridge in front of the post comes off, then the post and bead go on
+module detent_trim(fs, H) let(l = detent_len * PITCH + 0.6, s = H - LID_H)
+    for (x = detent_xs(fs)) along_front(fs, x - l / 2, x + l / 2) translate([-1, s]) square([DT_U + 1, SEAT + 1]);
+
+module detent_catches(fs, H) let(l = detent_len * PITCH, s = H - LID_H)
+    for (x = detent_xs(fs)) along_front(fs, x - l / 2, x + l / 2)
+        intersection() { union() { detent_post2d(s); detent_bead2d(s); } translate([-1, s - eps]) square([WALL + 2, LID_H]); }
+
+// lid: solid skin in place of the groove over the post, then the post's pocket and the bead's groove
+module detent_fill(fs, H) let(l = detent_len * PITCH, s = H - LID_H)
+    for (x = detent_xs(fs)) along_front(fs, x - l / 2, x + l / 2) translate([0, s]) square([WALL + lid_clear + eps, SEAT + lid_clear + eps]);
+
+module detent_cuts(fs, H) let(l = detent_len * PITCH + 0.6, s = H - LID_H)
+    for (x = detent_xs(fs)) along_front(fs, x - l / 2, x + l / 2) {
+        offset(delta = lid_clear) detent_post2d(s, detent_bump + 0.2);
+        offset(delta = 0.1) detent_bead2d(s);
+    }
 
 // Plinth: the bottom band of the body, up to just above the floor (its first big
 // solid layers), is set in
@@ -476,11 +500,12 @@ module box_body(fs, H) {
         translate([0, 0, floor_t]) linear_extrude(seam + SEAT) plan(fs, WALL);
         if (!EDGE) side_panels(fs, H);
         if (PLINTHS) plinth_cut(fs, 0, PLINTH_H);
+        detent_trim(fs, H);
     }
     if (EDGE) edge_studs(fs, H, 0, seam);
     else side_panels(fs, H, true);
     if (HINGE) hinge_tabs(fs, H);
-    detent_beads(fs, H);
+    detent_catches(fs, H);
 }
 
 // lid in box coordinates: it sits on the seam, H - LID_H. Its underside has
@@ -498,6 +523,7 @@ module box_lid(fs, H, nf = 0) {
                 else ridge(fs, seam - 1, RIM - lid_clear - 1, SEAT + lid_clear + 1);
             }
             translate([0, 0, seam]) linear_extrude(SEAT + lid_clear + eps) plan(fs, WALL + lid_clear);
+            detent_fill(fs, H);
         }
         if (HINGE) hinge_cuts(fs, H);
         detent_cuts(fs, H);
