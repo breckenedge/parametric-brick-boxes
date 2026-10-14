@@ -15,8 +15,8 @@
 //      the back (friction pins, holds any angle up to 90 deg, lifts off at
 //      90 deg)
 //
-//  Box height is set in side stud rows: side_rows, plus rise for each shelf
-//  row back (see row), plus the lid band's row. Every box is whole stud
+//  Box height is set in side stud rows: side_rows, counting the lid band's
+//  row, plus rise for each shelf row back (see row). Every box is whole stud
 //  rows tall, so the side studs of neighbouring boxes line up.
 //
 //  Box size is studs_l x studs_w, the whole footprint.
@@ -48,8 +48,8 @@ lid_open = 0;           // [0:5:90]
 studs_l = 21;           // [5:1:40]
 // box width, front to back, studs
 studs_w = 12;           // [5:1:30]
-// stud rows on the sides of a front-row box, under the lid band - sets the box height
-side_rows = 2;          // [1:1:30]
+// stud rows on the sides of a front-row box, the lid band's included - sets the box height
+side_rows = 2;          // [2:1:30]
 // extra stud rows for each row further back
 rise = 6;               // [0:1:12]
 // shelf row the box is for, 0 = front: each row back is rise stud rows taller, so whatever stands on the boxes in back sits higher
@@ -134,8 +134,8 @@ function mm(n) = n * PITCH - 2 * PLAY;
 //  Size
 // ---------------------------------------------------------------------
 FS = [max(5, round(studs_l)), max(5, round(studs_w))];   // footprint, studs
-ROWS = side_rows + row * rise;   // side stud rows under the lid band
-BH = (ROWS + 1) * PITCH;         // box height, mm: those rows and the lid band's
+ROWS = max(2, round(side_rows)) + row * rise;   // side stud rows, the lid band's included
+BH = ROWS * PITCH;                              // box height, mm
 
 // ---------------------------------------------------------------------
 //  Studs
@@ -370,7 +370,7 @@ module box() {
 echo(str("\n==== Parametric brick box ====",
     "\n  size     ", FS[0], " x ", FS[1], " studs (", round(mm(FS[0])), " x ", round(mm(FS[1])), " mm), ",
                      BH / PLATE, " plates (", BH, " mm) tall",
-    "\n  row      ", row, ": side_rows ", side_rows, row > 0 ? str(" + ", row, " x rise ", rise) : "", " = ", ROWS, " stud rows + 1 on the lid\n"));
+    "\n  row      ", row, ": side_rows ", side_rows, row > 0 ? str(" + ", row, " x rise ", rise) : "", " = ", ROWS, " stud rows, the top one on the lid\n"));
 if (max(mm(FS[0]), mm(FS[1])) > max(bed_x, bed_y) || min(mm(FS[0]), mm(FS[1])) > min(bed_x, bed_y) || BH > bed_z)
     echo("WARNING: the box is too big for the printer bed");
 if (WALL < 3.2) echo(str("NOTE: ", WALL, " mm walls leave a ", SEAT, " mm seat ridge and ", DT_U - lid_clear - detent_bump - 0.1, " mm of lid skin over the detent"));
