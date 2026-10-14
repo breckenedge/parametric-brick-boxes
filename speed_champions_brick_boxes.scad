@@ -158,7 +158,6 @@ DT_U = min(2, WALL - 1.2);   // detent post: its outer face, in from the front f
 DT_V = 2.2;             // ... and the height of that vertical face above the seam
 DT_Z = 1.4;             // detent bead centre above the seam, on the post's outer face
 DT_FLAT = 0.6;          // flat on the bead tip
-LIP = 1.2;              // lid: plug ring inside the groove, round the hollow
 BEEF = 2;               // lid: solid margin round the hinge slots and the detent pocket
 eps = 0.01;
 $fn = 40;
@@ -315,7 +314,7 @@ module lid_pose(fs, H) let(a = hinge_axis(fs, H))
 //  bead clicks into a groove in the lid's front skin, which comes down
 //  outside the post. Squeeze the front of the box and the wall top bows
 //  in, pulling the bead out of the groove, and the lid lifts free; the lid's
-//  plug is cut back behind the post to give the wall room. Closing, the
+//  pocket over the post runs wide inside to give the wall room. Closing, the
 //  skin rides down the bead and pushes the wall top in the same way. Every
 //  face is vertical or 45 deg: no supports.
 //  Front coordinates: u = in from the front face, v = up.
@@ -359,13 +358,13 @@ module detent_cuts(fs, H) let(l = detent_len * PITCH + 0.6, s = H - LID_H)
 
 
 // ---------------------------------------------------------------------
-//  Lid hollow: everything under the top skin and inside the outer lip
-//  (band, groove and plug ring) is open, except solid blocks round the
+//  Lid hollow: everything under the top skin inside the outer lip (the band
+//  with the sloped groove edge) is open, except solid blocks round the
 //  hinge slots and the detent pockets.
 // ---------------------------------------------------------------------
-module lid_hollow(fs, H) let(seam = H - LID_H, ins = WALL + lid_clear + LIP,
+module lid_hollow(fs, H) let(seam = H - LID_H, ins = WALL - TIP,   // the top of the groove slope
         hx = TAB_W / 2 + hinge_clear + PIN_L + 0.3 + BEEF, hy = HR + TAB_D + hinge_clear + BEEF,
-        dx = (detent_len * PITCH + 0.6) / 2 + BEEF, dy = ins + BEEF)
+        dx = (detent_len * PITCH + 0.6) / 2 + BEEF, dy = WALL + lid_clear + detent_bump + 0.3 + BEEF)   // past the pocket
     difference() {
         translate([0, 0, seam - 1]) linear_extrude(LID_H - lid_top + 1) plan(fs, ins);
         for (tx = tab_xs(fs)) translate([tx - hx, mm(fs[1]) / 2 - hy, seam - 2]) cube([2 * hx, hy + 1, LID_H + 2]);
@@ -389,8 +388,8 @@ module box_body(fs, H) {
 }
 
 // lid in box coordinates: it sits on the seam, H - LID_H. Its underside has
-// a 45 deg groove that drops over the wall ridge and a plug that fills the
-// opening, so it prints top up with no overhang steeper than 45 deg.
+// a 45 deg groove that drops over the wall ridge and centres it; inside that
+// it is hollow. It prints top up, the hollow bridged by the top skin.
 module box_lid(fs, H, nf = 0) {
     seam = H - LID_H;
     difference() {
@@ -400,7 +399,6 @@ module box_lid(fs, H, nf = 0) {
                 // the groove stops at the axis; behind it the lid is solid over the wall
                 front_of(fs, mm(fs[1]) / 2 - HR) ridge(fs, seam - 1, RIM - lid_clear - 1, SEAT + lid_clear + 1);
             }
-            translate([0, 0, seam]) linear_extrude(SEAT + lid_clear + eps) plan(fs, WALL + lid_clear);
             detent_fill(fs, H);
         }
         hinge_cuts(fs, H);
