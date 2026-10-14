@@ -57,17 +57,13 @@ row = 0;                // [0:1:6]
 // rounding of the vertical edges, mm (the corner studs start 1.5 mm in)
 corner_r = 1;           // [0:0.25:1.5]
 
-/* [Top studs] */
+/* [Studs] */
 // studs over the whole top (off = plain)
 top_studs = true;
-
-/* [Side studs] */
 studs_front = true;
 studs_back = true;
 studs_left = true;
 studs_right = true;
-
-/* [Studs] */
 // printed stud diameter - tune for clutch (LEGO 4.8)
 stud_d = 4.85;          // [4.6:0.05:5.1]
 stud_h = 1.8;           // [1.2:0.1:2]
