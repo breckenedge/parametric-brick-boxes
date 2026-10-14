@@ -31,8 +31,8 @@ with storage inside.
 - The body prints upright without supports; the lid prints inverted (top down), its top
   studs on supports. Print `stud_fit_test.scad` first to find your stud sizes, then
   a small 6 x 5 box to check the whole fit.
-  For reference, in PLA+ on the author's printer, `stud_d = 5.05` (top) and
-  `side_stud_d = 5.00` (sides) clutch well.
+  For reference, on the author's Bambu Lab A1 printing SUNLU PLA 2.0+,
+  `stud_d = 5.05` (top) and `side_stud_d = 5.00` (sides) clutch well.
 
 ## Use
 
