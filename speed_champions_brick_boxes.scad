@@ -7,12 +7,13 @@
 //    - every dimension is LEGO units: footprints in studs (8 mm pitch,
 //      0.1 mm play per side), heights in stud rows (8 mm)
 //    - studs edge to edge over every side, from the bed up to the seam,
-//      and a row round the lid band (not its back when hinged)
+//      and a row round the lid band (not its back, which lands on the wall
+//      top at 90 deg)
 //    - a flat lid with studs standing on its top face, so plates press on
 //      and pry off easily - studs everywhere, or just pads for the minifigs
-//    - lid (the top band) over an open storage box: hinged on two tabs at
+//    - lid (the top band) over an open storage box, hinged on two tabs at
 //      the back (friction pins, holds any angle up to 90 deg, lifts off at
-//      90 deg), or a plain lift-off lid seated on a ridge
+//      90 deg)
 //
 //  Box height is set in side stud rows: side_rows, plus rise for each shelf
 //  row back (see row), plus the lid band's row. Every box is whole stud
@@ -49,10 +50,8 @@
 
 /* [Box to print] */
 part = "print";         // [print, body, lid, assembled]
-// hinged lid: open it in previews, degrees
+// open the lid in previews, degrees
 lid_open = 0;           // [0:5:90]
-// lift-off lid: lift it in previews to see inside
-lid_lift = 0;           // [0:1:60]
 
 /* [Box size] */
 // box length, left to right, studs (the whole footprint - see the size table at the top)
@@ -108,12 +107,10 @@ side_stud_flat = 0.4;   // [0:0.1:1]
 wall = 3.2;             // [2.4:0.4:6]
 // floor thickness (3.2 = 1 plate)
 floor_t = 3.2;          // [1.6:0.8:6.4]
-// lift-off lid: play between lid groove and wall ridge
+// play between the lid groove and the wall ridge
 lid_clear = 0.2;        // [0:0.05:0.6]
 
 /* [Lid hinge] */
-// hinge: pivots on two tabs at the back; seat: lift-off lid on a ridge
-lid_style = "hinge";    // [hinge, seat]
 // studs from each end of the box to a hinge tab
 hinge_from_end = 1;     // [1:1:6]
 // pins on the tabs
@@ -149,7 +146,6 @@ WALL = wall;
 RIM = 1.2;              // flat lid rim on the wall top, outside the seat
 TIP = 0.8;              // flat on the inner edge of the seat ridge
 SEAT = max(0.4, WALL - RIM - TIP);   // height of the 45 deg seat ridge above the seam
-HINGE = lid_style == "hinge";
 HR = LID_H / 2;         // hinge axis: mid-height of the lid band, HR in from the back face
 TAB_R = 2;              // hinge tab head radius
 TAB_W = 6;              // tab thickness along the axis
@@ -305,10 +301,9 @@ module hinge_cuts(fs, H) {
     }
 }
 
-// the lid's pose: hinged open by lid_open, or lifted by lift
-module lid_pose(fs, H, lift) let(a = hinge_axis(fs, H))
-    if (HINGE) translate([0, a[0], a[1]]) rotate([-lid_open, 0, 0]) translate([0, -a[0], -a[1]]) children();
-    else translate([0, 0, lift]) children();
+// the lid's pose: hinged open by lid_open
+module lid_pose(fs, H) let(a = hinge_axis(fs, H))
+    translate([0, a[0], a[1]]) rotate([-lid_open, 0, 0]) translate([0, -a[0], -a[1]]) children();
 
 // ---------------------------------------------------------------------
 //  Detent, squeeze to open: a catch post stands on the front wall top, its
@@ -365,14 +360,13 @@ module box_body(fs, H) {
         union() {
             linear_extrude(seam) plan(fs);
             // hinged: no ridge where the lid's back edge swings down past it
-            if (HINGE) front_of(fs, mm(fs[1]) / 2 - 2 * HR - 0.5) ridge(fs, seam - eps, RIM, SEAT);
-            else ridge(fs, seam - eps, RIM, SEAT);
+            front_of(fs, mm(fs[1]) / 2 - 2 * HR - 0.5) ridge(fs, seam - eps, RIM, SEAT);
         }
         translate([0, 0, floor_t]) linear_extrude(seam + SEAT) plan(fs, WALL);
         detent_trim(fs, H);
     }
     side_studs(fs, H, 0, seam);
-    if (HINGE) hinge_tabs(fs, H);
+    hinge_tabs(fs, H);
     detent_catches(fs, H);
 }
 
@@ -385,18 +379,17 @@ module box_lid(fs, H, nf = 0) {
         union() {
             difference() {
                 translate([0, 0, seam]) linear_extrude(LID_H) plan(fs);
-                // hinged: the groove stops at the axis; behind it the lid is solid over the wall
-                if (HINGE) front_of(fs, mm(fs[1]) / 2 - HR) ridge(fs, seam - 1, RIM - lid_clear - 1, SEAT + lid_clear + 1);
-                else ridge(fs, seam - 1, RIM - lid_clear - 1, SEAT + lid_clear + 1);
+                // the groove stops at the axis; behind it the lid is solid over the wall
+                front_of(fs, mm(fs[1]) / 2 - HR) ridge(fs, seam - 1, RIM - lid_clear - 1, SEAT + lid_clear + 1);
             }
             translate([0, 0, seam]) linear_extrude(SEAT + lid_clear + eps) plan(fs, WALL + lid_clear);
             detent_fill(fs, H);
         }
-        if (HINGE) hinge_cuts(fs, H);
+        hinge_cuts(fs, H);
         detent_cuts(fs, H);
     }
-    // round the lid band; hinged, none on the back, which lands on the wall top at 90 deg
-    side_studs(fs, H, seam, H, !HINGE);
+    // round the lid band, but not the back, which lands on the wall top at 90 deg
+    side_studs(fs, H, seam, H, false);
     if (top_studs) for (x = cols(fs[0]), y = cols(fs[1])) translate([x, y, H - eps]) stud();
     else for (i = [0:1:nf - 1]) let(f = fig_spot(fs, nf, i))
         for (x = cols(fig_pad_x), y = cols(fig_pad_y)) translate([f[0] + x, f[1] + y, H - eps]) stud();
@@ -405,9 +398,9 @@ module box_lid(fs, H, nf = 0) {
 body_color = [0.55, 0.56, 0.58];   // mid gray
 lid_color  = [0.78, 0.79, 0.80];   // light gray, so the seam stays easy to see
 
-module box(lift = 0) {
+module box() {
     color(body_color) render() box_body(FS, BH);
-    color(lid_color) lid_pose(FS, BH, lift) render() box_lid(FS, BH, NF);
+    color(lid_color) lid_pose(FS, BH) render() box_lid(FS, BH, NF);
 }
 
 // ---------------------------------------------------------------------
@@ -423,11 +416,11 @@ if (max(mm(FS[0]), mm(FS[1])) > max(bed_x, bed_y) || min(mm(FS[0]), mm(FS[1])) >
 if (NF > 0 && min(CAR[0], CAR[1]) < 3)
     echo(str("WARNING: only ", CAR[1], " x ", CAR[0], " studs are left for the car beside the figures - make the box bigger or lower fig_strip"));
 if (WALL < 3.2) echo(str("NOTE: ", WALL, " mm walls leave a ", SEAT, " mm seat ridge and ", DT_U - lid_clear - detent_bump - 0.1, " mm of lid skin over the detent"));
-if (HINGE && tab_xs(FS)[1] < TAB_W / 2 + hinge_clear + PIN_L + 2)
+if (tab_xs(FS)[1] < TAB_W / 2 + hinge_clear + PIN_L + 2)
     echo(str("WARNING: the box is too short for hinge tabs ", hinge_from_end, " studs from each end - lower hinge_from_end"));
 
 LID_Z = -(BH - LID_H);       // lid's lowest point onto the bed
-if (part == "assembled") box(lid_lift);
+if (part == "assembled") box();
 else if (part == "body") color(body_color) box_body(FS, BH);
 else if (part == "lid") color(lid_color) translate([0, 0, LID_Z]) box_lid(FS, BH, NF);
 else {   // print: body and lid side by side, both right way up

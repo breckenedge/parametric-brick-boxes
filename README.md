@@ -13,7 +13,7 @@ lid, with storage inside.
   the cars in back sit higher.
 - Minifig stand space beside each car (0-2 figures, placed by compass direction: N, NE, E, SE, S, SW, W or NW).
 - Hinged lid on two pinned tabs at the back: friction holds it at any angle up to 90°,
-  and it lifts off at 90°. Or set `lid_style = "seat"` for a plain lift-off lid.
+  and it lifts off at 90°.
 - Snaps shut on a detent: a bead on the front wall top clicks into the lid; squeeze the
   middle of the box front to release it (`detent_count`, `detent_len`; `detent_bump` sets
   how firm the snap is).
