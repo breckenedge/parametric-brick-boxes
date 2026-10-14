@@ -9,7 +9,7 @@
 //    - studs edge to edge over every side, from the bed up to the seam,
 //      and a row round the lid band (not its back, which lands on the wall
 //      top at 90 deg)
-//    - a flat lid with studs standing on its top face, so plates press on
+//    - a flat, hollow lid with studs standing on its top face, so plates press on
 //      and pry off easily - studs everywhere, or just pads for the minifigs
 //    - lid (the top band) over an open storage box, hinged on two tabs at
 //      the back (friction pins, holds any angle up to 90 deg, lifts off at
@@ -109,6 +109,8 @@ wall = 3.2;             // [2.4:0.4:6]
 floor_t = 3.2;          // [1.6:0.8:6.4]
 // play between the lid groove and the wall ridge
 lid_clear = 0.2;        // [0:0.05:0.6]
+// lid top skin thickness: under it the lid is hollow, inside the outer lip
+lid_top = 1.6;          // [1.2:0.4:4]
 
 /* [Lid hinge] */
 // studs from each end of the box to a hinge tab
@@ -156,6 +158,8 @@ DT_U = min(2, WALL - 1.2);   // detent post: its outer face, in from the front f
 DT_V = 2.2;             // ... and the height of that vertical face above the seam
 DT_Z = 1.4;             // detent bead centre above the seam, on the post's outer face
 DT_FLAT = 0.6;          // flat on the bead tip
+LIP = 1.2;              // lid: plug ring inside the groove, round the hollow
+BEEF = 2;               // lid: solid margin round the hinge slots and the detent pocket
 eps = 0.01;
 $fn = 40;
 
@@ -354,6 +358,20 @@ module detent_cuts(fs, H) let(l = detent_len * PITCH + 0.6, s = H - LID_H)
     }
 
 
+// ---------------------------------------------------------------------
+//  Lid hollow: everything under the top skin and inside the outer lip
+//  (band, groove and plug ring) is open, except solid blocks round the
+//  hinge slots and the detent pockets.
+// ---------------------------------------------------------------------
+module lid_hollow(fs, H) let(seam = H - LID_H, ins = WALL + lid_clear + LIP,
+        hx = TAB_W / 2 + hinge_clear + PIN_L + 0.3 + BEEF, hy = HR + TAB_D + hinge_clear + BEEF,
+        dx = (detent_len * PITCH + 0.6) / 2 + BEEF, dy = ins + BEEF)
+    difference() {
+        translate([0, 0, seam - 1]) linear_extrude(LID_H - lid_top + 1) plan(fs, ins);
+        for (tx = tab_xs(fs)) translate([tx - hx, mm(fs[1]) / 2 - hy, seam - 2]) cube([2 * hx, hy + 1, LID_H + 2]);
+        for (x = detent_xs(fs)) translate([x - dx, -mm(fs[1]) / 2 - 1, seam - 2]) cube([2 * dx, dy + 1, LID_H + 2]);
+    }
+
 module box_body(fs, H) {
     seam = H - LID_H;
     difference() {
@@ -387,6 +405,7 @@ module box_lid(fs, H, nf = 0) {
         }
         hinge_cuts(fs, H);
         detent_cuts(fs, H);
+        lid_hollow(fs, H);
     }
     // round the lid band, but not the back, which lands on the wall top at 90 deg
     side_studs(fs, H, seam, H, false);
