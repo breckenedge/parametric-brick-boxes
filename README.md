@@ -1,18 +1,24 @@
 # Parametric brick boxes
 
 Printable, parametric storage boxes, LEGO-compatible and written in OpenSCAD:
-studded edge to edge on every side and on the lid, with storage inside.
+studded edge to edge on every side and on the lid (each face can be switched off),
+with storage inside.
 
 ![A 21 x 12 stud box with its hinged lid open](images/open.png)
 
-| Closed | Print layout | Rows 0, 1 and 2 |
-|---|---|---|
-| ![Closed box, studded on every face](images/closed.png) | ![Body upright, lid inverted beside it](images/print.png) | ![Three boxes stepping up from front to back](images/lineup.png) |
+| Closed | Studs only front and back |
+|---|---|
+| ![Closed box, studded on every face](images/closed.png) | ![Box with a plain lid top and plain ends, studs only on the front and back](images/faces.png) |
+| **Print layout** | **Rows 0, 1 and 2** |
+| ![Body upright, lid inverted beside it](images/print.png) | ![Three boxes stepping up from front to back](images/lineup.png) |
 
 - Everything is in LEGO units: footprints in studs (8 mm), heights in stud rows (8 mm).
 - Box size is set directly in studs (`studs_l` x `studs_w`).
 - Every box is whole stud rows tall, with a row of studs round the lid band too, so the
   side studs of neighbouring boxes line up.
+- Turn any face's studs off in the Customizer's **Studs** group: `top_studs` for the lid
+  top, `studs_front`, `studs_back`, `studs_left` and `studs_right` for the walls. A plain
+  face is flat, ready for a label, or to stand flush against a wall or another box.
 - Set `row` for where the box will stand (0 = front): each row back is taller, so
   whatever stands on the boxes in back sits higher.
 - Hinged lid on two pinned tabs at the back: friction holds it at any angle up to 90°,
