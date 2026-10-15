@@ -85,11 +85,11 @@ corner_r = 1;           // [0:0.25:1.5]
 /* [Studs] */
 // each face, edge to edge: studs, sockets (a recess with tubes that takes studs, like a brick's underside) or flat
 top = "studs";          // [studs, sockets, flat]
-bottom = "flat";        // [studs, sockets, flat]
+bottom = "sockets";     // [studs, sockets, flat]
 front = "studs";        // [studs, sockets, flat]
-back = "flat";          // [studs, sockets, flat]
-left = "studs";         // [studs, sockets, flat]
-right = "studs";        // [studs, sockets, flat]
+back = "sockets";       // [studs, sockets, flat]
+left = "flat";          // [studs, sockets, flat]
+right = "flat";         // [studs, sockets, flat]
 // printed stud diameter - tune for clutch (LEGO 4.8)
 stud_d = 4.85;          // [4.6:0.05:5.1]
 stud_h = 1.8;           // [1.2:0.1:2]
