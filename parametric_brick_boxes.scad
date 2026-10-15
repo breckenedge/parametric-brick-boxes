@@ -33,6 +33,14 @@
 //          raised label needs them too; an engraved one doesn't).
 //          Everything else - the 45 deg groove edge, hinge slots, detent
 //          pocket - opens upwards
+//    or print_in_place: one piece, the body upright with the lid standing open
+//          90 deg on it, nothing to assemble. Gaps of pip_gap separate them:
+//          round the hinge (loose, and with no lead-in the pins are captive)
+//          and under the lid, where the wall tops it stands on are dropped.
+//          The lid's top studs then print sideways like wall studs
+//          (side_stud_d) and the front of its band faces up (stud_d); top
+//          sockets take side_socket_d. A lid over 1 row tall overhangs the
+//          back and needs supports there
 //  Hinge: the body's tabs print upright with flat-bottomed pins. To fit the
 //  lid, hold it upright (open 90 deg) behind the tabs and slide it forward
 //  onto the pins, then close it. Tune hinge_play for stiffness.
@@ -52,6 +60,10 @@ use <fonts/Fredoka.ttf>
 part = "print";         // [print, body, lid, assembled]
 // open the lid in previews, degrees
 lid_open = 0;           // [0:5:90]
+// body and lid printed as one piece, the lid standing open at 90 deg: nothing to assemble, but the hinge is loose (it can't come apart)
+print_in_place = false;
+// print in place: the gap left between body and lid, mm
+pip_gap = 0.3;          // [0.2:0.05:0.6]
 
 /* [Box size] */
 // box length, left to right, studs (the whole footprint)
@@ -157,6 +169,8 @@ DT_V = 2.2;             // ... and the height of that vertical face above the se
 DT_Z = 1.4;             // detent bead centre above the seam, on the post's outer face
 DT_FLAT = 0.6;          // flat on the bead tip
 BEEF = 2;               // lid: solid margin round the hinge slots and the detent pocket
+PIP = print_in_place;
+HCLR = PIP ? max(hinge_clear, pip_gap) : hinge_clear;   // gap round the tabs in their slots
 SOCKET_H = stud_h + 0.2;   // socket depth: a stud seats fully
 SOCKET_CH = 0.4;        // 45 deg chamfer on the socket mouth: lead-in, and room for first-layer squish
 SOCKET_MIN = SOCKET_H + 1.2;   // material a socket needs: its depth and a skin behind it
@@ -210,13 +224,18 @@ module stud_shape(d) {
     translate([0, 0, stud_h - 0.3]) cylinder(d1 = d, d2 = d - 0.6, h = 0.3, $fn = 48);
 }
 module stud() stud_shape(stud_d);
-// wall stud: local -y ends up pointing down, so that is where the flat goes
-// (or +y, up, for the lid, which prints inverted)
-module side_stud(lid = false) intersection() {
+// wall stud, with the flat on whichever side ends up pointing down as printed:
+// at angle a round its axis from local +x (-90: local -y, for the body; 90 for
+// the lid, which prints inverted)
+module side_stud(a = -90) intersection() {
     stud_shape(side_stud_d);
-    mirror([0, lid ? 1 : 0, 0])
+    rotate(a + 90)
         translate([-side_stud_d, -side_stud_d / 2 + side_stud_flat, -1]) cube([2 * side_stud_d, 2 * side_stud_d, stud_h + 2]);
 }
+// the lid's studs: printed in place, standing open, its top studs point back
+// like wall studs (flat underneath, local +y), and the front of its band
+// points up, studs and all
+module lid_top_stud() if (PIP) side_stud(90); else stud();
 
 // LEGO-style sockets on a face, like a brick's underside: one shallow
 // recess round a grid of stud positions (us x vs, the face's own 2D
@@ -282,14 +301,16 @@ module side_faces(fs, H, z0, z1, kind, back_z0 = -1, lid = false) {
              [right, 90, L / 2, fs[1], z0, front, back], [left, -90, L / 2, fs[1], z0, back, front]];
     for (f = faces) if (f[0] == kind) rotate(f[1]) translate([0, -f[2], 0]) {
         if (kind == "studs") for (q = face_pts(f[3] * PITCH, H)) let(z = H / 2 + q[1])
-            if (z - r > f[4] && z + r < z1) translate([q[0], eps, z]) rotate([90, 0, 0]) side_stud(lid);
+            if (z - r > f[4] && z + r < z1) translate([q[0], eps, z]) rotate([90, 0, 0])
+                if (lid && PIP && f[1] == 0) stud();   // printed in place: pointing up
+                else side_stud(!lid ? -90 : !PIP ? 90 : f[1] == 90 ? 0 : f[1] == -90 ? 180 : 90);   // ... or flat towards the back
         if (kind == "sockets") let(us = cols(f[3]), nz = round(H / PITCH),
                 zs = [for (k = [0:nz - 1]) let(z = H / 2 + (k - (nz - 1) / 2) * PITCH) if (z - r > f[4] && z + r < z1) z],
                 hw = mm(f[3]) / 2,
                 // lid: no sockets in front of the detent pockets, behind the front's bottom row
                 skip = lid && f[1] == 0 ? [for (u = us, z = zs) if (z < z0 + PITCH && len([for (x = detent_xs(fs)) if (abs(u - x) < dl / 2 + PITCH / 2) x]) > 0) [u, z]] : [])
             if (len(zs) > 0) rotate([90, 0, 0]) mirror([0, 0, 1])   // face coordinates (u, z), cutting in (+y)
-                socket_field(us, zs, side_socket_d,
+                socket_field(us, zs, lid && PIP && f[1] == 0 ? socket_d : side_socket_d,   // printed in place, the lid front faces up
                     [f[5] == "sockets" ? -hw : undef, f[6] == "sockets" ? hw : undef,
                      !lid && bottom == "sockets" ? 0 : undef, lid && top == "sockets" ? H : undef], skip);
     }
@@ -342,9 +363,9 @@ module tab_head2d() hull() { circle(r = TAB_R); polygon([[-eps, -TAB_R * sqrt(2)
 module tab2d() {
     tab_head2d();
     translate([-TAB_D, -HR - eps]) square([TAB_D, HR + eps]);
-    let(uw = HR - WALL, d = uw + TAB_D)          // buttress under the part of the stem that overhangs the inside
+    let(uw = HR - WALL, d = uw + TAB_D, g = PIP ? pip_gap : 0)   // buttress under the part of the stem that overhangs the inside
         if (d > 0) polygon(uw < 0 ? [[-TAB_D, -HR + eps], [0, -HR + eps], [0, -HR - d], [uw, -HR - d]]
-                                  : [[-TAB_D, -HR + eps], [0, -HR + eps], [0, -HR], [uw, -HR], [uw, -HR - d]]);   // flush with the seam behind the axis, where the lid lands at 90 deg
+                                  : [[-TAB_D, -HR + eps], [0, -HR + eps], [0, -HR - g], [uw, -HR - g], [uw, -HR - d]]);   // flush with the seam behind the axis, where the lid lands at 90 deg (pip_gap below it, printed in place)
 }
 
 // pin along +z with flats on local x (they end up top and bottom), cone tip
@@ -363,27 +384,28 @@ module hinge_tabs(fs, H) let(a = hinge_axis(fs, H))
     }
 
 module hinge_cuts(fs, H) {
-    L = mm(fs[0]); w = TAB_W / 2 + hinge_clear; hl = w + PIN_L + 0.3;
+    L = mm(fs[0]); w = TAB_W / 2 + HCLR; hl = w + PIN_L + max(0.3, PIP ? pip_gap : 0);
     ch = hinge_pin_d - 2 * PIN_FLAT + 0.2;                    // lead-in: lets the flatted pins through only at 90 deg
     along_axis(fs, H, -L / 2 - 1, L / 2 + 1)                  // round the lower back edge about the axis
         difference() { translate([0, -HR - 1]) square([HR + 1, HR + 1]); circle(r = HR, $fn = 96); }
     for (tx = tab_xs(fs)) {
-        along_axis(fs, H, tx - w, tx + w) offset(r = hinge_clear) {
+        along_axis(fs, H, tx - w, tx + w) offset(r = HCLR) {
             // the tab as the lid sees it while turning 0..90 deg: head, its
             // tip swung round to the back, and the stem sweeping down and back
             hull() { tab_head2d(); rotate(90) tab_head2d(); }
             translate([-TAB_D, -HR - 1]) square([HR + 1 + TAB_D, HR + 1]);
         }
         along_axis(fs, H, tx - hl, tx + hl) {
-            circle(d = hinge_pin_d + hinge_play);
-            translate([-ch / 2, -HR - 1]) square([ch, HR + 1]);
+            // printed in place: pip_gap all round, and no lead-in, so the pins stay captive
+            circle(d = hinge_pin_d + (PIP ? 2 * pip_gap : hinge_play));
+            if (!PIP) translate([-ch / 2, -HR - 1]) square([ch, HR + 1]);
         }
     }
 }
 
 // the lid's pose: hinged open by lid_open
-module lid_pose(fs, H) let(a = hinge_axis(fs, H))
-    translate([0, a[0], a[1]]) rotate([-lid_open, 0, 0]) translate([0, -a[0], -a[1]]) children();
+module lid_pose(fs, H, open = lid_open) let(a = hinge_axis(fs, H))
+    translate([0, a[0], a[1]]) rotate([-open, 0, 0]) translate([0, -a[0], -a[1]]) children();
 
 // ---------------------------------------------------------------------
 //  Detent, squeeze to open: a catch post stands on the front wall top, its
@@ -440,10 +462,14 @@ module detent_cuts(fs, H) let(l = detent_len * PITCH + 0.6, s = H - LID_H)
 // ---------------------------------------------------------------------
 module lid_hollow(fs, H) let(seam = H - LID_H,
         ins = len([for (s = SIDES) if (s == "sockets") s]) > 0 ? max(WALL - TIP, SOCKET_MIN) : WALL - TIP,   // the top of the groove slope, or room for wall sockets
-        hx = TAB_W / 2 + hinge_clear + PIN_L + 0.3 + BEEF, hy = HR + TAB_D + hinge_clear + BEEF,
+        hx = TAB_W / 2 + HCLR + PIN_L + max(0.3, PIP ? pip_gap : 0) + BEEF, hy = HR + TAB_D + HCLR + BEEF,
         dx = (detent_len * PITCH + 0.6) / 2 + BEEF, dy = WALL + lid_clear + detent_bump + 0.3 + BEEF)   // past the pocket
     difference() {
         translate([0, 0, seam - 1]) linear_extrude(LID_H - LID_TOP + 1) plan(fs, ins);
+        // printed in place, standing open, the front skin is on top: carry the groove's
+        // 45 deg slope on up to the top skin, so the hollow has no flat ceiling
+        if (PIP) let(z0 = seam + SEAT + lid_clear) along_front(fs, -mm(fs[0]), mm(fs[0]))
+            polygon([[-1, z0 - eps], [ins, z0 - eps], [ins + H - z0 + 1, H + 1], [-1, H + 1]]);
         for (tx = tab_xs(fs)) translate([tx - hx, mm(fs[1]) / 2 - hy, seam - 2]) cube([2 * hx, hy + 1, LID_H + 2]);
         for (x = detent_xs(fs)) translate([x - dx, -mm(fs[1]) / 2 - 1, seam - 2]) cube([2 * dx, dy + 1, LID_H + 2]);
     }
@@ -460,6 +486,8 @@ module box_body(fs, H) {
                 }
                 translate([0, 0, FLOOR]) linear_extrude(seam + SEAT) plan(fs, WALL);
                 detent_trim(fs, H);
+                // printed in place: the wall tops the lid stands on when open, lowered by pip_gap
+                if (PIP) translate([-mm(fs[0]), mm(fs[1]) / 2 - 2 * HR - 0.5, seam - pip_gap]) cube([2 * mm(fs[0]), 2 * HR + 1, SEAT + pip_gap + 1]);
             }
             side_faces(fs, H, 0, seam, "studs");
             if (bottom == "studs") for (x = cols(fs[0]), y = cols(fs[1])) translate([x, y, eps]) mirror([0, 0, 1]) stud();
@@ -494,11 +522,11 @@ module box_lid(fs, H) {
         lid_hollow(fs, H);
         side_faces(fs, H, seam, H, "sockets", seam + PITCH, true);
         // top socket field, solid wherever it would reach down into a hinge slot, and round the label
-        if (top == "sockets") let(a = hinge_axis(fs, H), deep = H - SOCKET_H - 0.4 < a[1] + TAB_R + hinge_clear,
-                                  sx = TAB_W / 2 + hinge_clear + 0.4 + PITCH / 2, sy = a[0] - TAB_R - hinge_clear - 0.4 - PITCH / 2,
+        if (top == "sockets") let(a = hinge_axis(fs, H), deep = H - SOCKET_H - 0.4 < a[1] + TAB_R + HCLR,
+                                  sx = TAB_W / 2 + HCLR + 0.4 + PITCH / 2, sy = a[0] - TAB_R - HCLR - 0.4 - PITCH / 2,
                                   L = mm(fs[0]), W = mm(fs[1]))
             translate([0, 0, H]) mirror([0, 0, 1])
-                socket_field(cols(fs[0]), cols(fs[1]), socket_d,
+                socket_field(cols(fs[0]), cols(fs[1]), PIP ? side_socket_d : socket_d,   // printed in place, they face back like wall sockets
                     [left == "sockets" ? -L / 2 : undef, right == "sockets" ? L / 2 : undef,
                      front == "sockets" ? -W / 2 : undef, back == "sockets" && LID_ROWS > 1 ? W / 2 : undef],
                     [for (x = cols(fs[0]), y = cols(fs[1]))
@@ -507,7 +535,7 @@ module box_lid(fs, H) {
     }
     // round the lid band, but not the back of its bottom row, which lands on the wall top at 90 deg
     side_faces(fs, H, seam, H, "studs", seam + PITCH, true);
-    if (top == "studs") for (x = cols(fs[0]), y = cols(fs[1])) if (!in_label(fs, x, y)) translate([x, y, H - eps]) stud();
+    if (top == "studs") for (x = cols(fs[0]), y = cols(fs[1])) if (!in_label(fs, x, y)) translate([x, y, H - eps]) lid_top_stud();
     if (LABEL && RAISED && LABEL_D > 0) translate([0, 0, H - eps]) linear_extrude(LABEL_D) label2d(fs);
 }
 
@@ -526,7 +554,7 @@ echo(str("\n==== Parametric brick box ====",
     "\n  size     ", FS[0], " x ", FS[1], " studs (", round(mm(FS[0])), " x ", round(mm(FS[1])), " mm), ",
                      BH / PLATE, " plates (", BH, " mm) tall",
     "\n  row      ", row, ": side_rows ", side_rows, row > 0 ? str(" + ", row, " x rise ", rise) : "", " = ", ROWS, " stud rows, the top ", LID_ROWS, " on the lid\n"));
-if (max(mm(FS[0]), mm(FS[1])) > max(bed_x, bed_y) || min(mm(FS[0]), mm(FS[1])) > min(bed_x, bed_y) || BH + (bottom == "studs" ? stud_h : 0) + TOP_TIP > bed_z)
+if (max(mm(FS[0]), mm(FS[1])) > max(bed_x, bed_y) || min(mm(FS[0]), mm(FS[1])) > min(bed_x, bed_y) || (bottom == "studs" ? stud_h : 0) + (PIP ? BH - LID_H + mm(FS[1]) + (front == "studs" ? stud_h : 0) : BH + TOP_TIP) > bed_z)
     echo("WARNING: the box is too big for the printer bed");
 if (WALL < 3.2) echo(str("NOTE: ", WALL, " mm walls leave a ", SEAT, " mm seat ridge and ", DT_U - lid_clear - detent_bump - 0.1, " mm of lid skin over the detent"));
 if (WALL < SOCKET_MIN && len([for (s = SIDES) if (s == "sockets") s]) > 0)
@@ -536,7 +564,9 @@ if (LID_TOP > lid_top) echo(str("NOTE: lid top thickened to ", LID_TOP, " mm for
 if (LABEL && (LABEL_BOX[1][0] - LABEL_BOX[0][0] > mm(FS[0]) - 2 * WALL || LABEL_BOX[1][1] - LABEL_BOX[0][1] > mm(FS[1]) - 2 * WALL))
     echo(str("WARNING: the label runs off the lid top - lower label_size or shorten the text"));
 if (LABEL && LABEL_D < label_depth) echo(str("NOTE: label engraved ", LABEL_D, " mm deep, to leave 0.4 mm of the ", LID_TOP, " mm lid top under it - raise lid_top for deeper"));
-if (tab_xs(FS)[1] < TAB_W / 2 + hinge_clear + PIN_L + 2)
+if (PIP && LID_ROWS > 1)
+    echo(str("NOTE: printed in place, a lid ", LID_ROWS, " rows tall overhangs the back of the box by ", LID_H - PITCH, " mm - it needs supports there"));
+if (tab_xs(FS)[1] < TAB_W / 2 + HCLR + PIN_L + 2)
     echo(str("WARNING: the box is too short for hinge tabs ", hinge_from_end, " studs from each end - lower hinge_from_end"));
 if (let(l = detent_len * PITCH + 0.6, xs = detent_xs(FS))   // each detent inside the end walls, and two clear of each other
         detent_count > 0 && (abs(xs[0]) + l / 2 > mm(FS[0]) / 2 - WALL || (detent_count == 2 && xs[1] - l / 2 < 0)))
@@ -549,6 +579,10 @@ module lid_print() translate([0, 0, BH + LID_TIP]) rotate([180, 0, 0]) render() 
 if (part == "assembled") box();
 else if (part == "body") color(body_color) body_print();
 else if (part == "lid") color(lid_color) lid_print();
+else if (PIP) translate([0, 0, BODY_TIP]) {   // print in place: body upright, the lid standing open on it
+    color(body_color) render() box_body(FS, BH);
+    color(lid_color) lid_pose(FS, BH, 90) render() box_lid(FS, BH);
+}
 else {   // print: body upright and lid inverted, side by side
     color(body_color) body_print();
     color(lid_color) translate([0, mm(FS[1]) + 15, 0]) lid_print();

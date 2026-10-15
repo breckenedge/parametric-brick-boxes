@@ -42,6 +42,9 @@ or flat), with storage inside.
   (bottom studs for the body, top studs for the lid) needs supports. With `sockets` or
   `flat` there, it prints flat without supports. Print `stud_fit_test.scad` first to
   find your stud and socket sizes, then a small 6 x 5 box to check the whole fit.
+  Or set `print_in_place` to print it all as one piece, with the lid standing open
+  on the body: no assembly, at the cost of a loose hinge in place of the friction one
+  (`pip_gap` sets the clearance between the parts).
   For reference, on the author's Bambu Lab A1 printing SUNLU PLA 2.0+, these clutch
   well: `stud_d` (top studs) 5.00–5.05, `side_stud_d` (side studs) 4.95–5.00,
   `socket_d` (top and bottom sockets) 4.85–4.90 and `side_socket_d` (side sockets)
