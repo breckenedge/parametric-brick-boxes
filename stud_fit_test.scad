@@ -7,8 +7,7 @@
 //    - top: a 2 x 2 group of upright studs per diameter, like the lid
 //    - underside: a 2 x 2 socket group per diameter (a recess with a tube,
 //      like a brick's underside) and a 1 x 2 group with a pin beside it,
-//      open on the bed like the box's top and
-//      bottom sockets
+//      open on the bed like the box's top and bottom sockets
 //    - back wall: a 2 x 2 group of sideways studs per diameter on its back
 //      face, printed the same way as the box walls (flat underside included),
 //      and in its front face a 2 x 2 socket group and, above it, a 1 x 2
