@@ -19,8 +19,10 @@ or flat), with storage inside.
   many of those rows are lid. A lid taller than one row swings out behind the box by
   8 mm per extra row when it's open.
 - Every face (`top`, `bottom`, `front`, `back`, `left`, `right`) is set to `studs`,
-  `sockets` or `flat` in the Customizer's **Studs** group. Sockets are holes that take
-  studs, so a box presses onto a baseplate or onto another box's studs. Flat faces take
+  `sockets` or `flat` in the Customizer's **Studs** group. Sockets are built like a
+  LEGO brick's underside: a shallow recess with hollow tubes between each group of four
+  studs (small pins along a face only one stud wide), so a box presses onto a baseplate
+  or onto another box's studs without a thick solid plate under it. Flat faces take
   a label, or stand flush against a wall or another box.
 - Optional text label on the lid top (**Lid label** group): set `label`, and it's
   centred on the lid with the top studs or sockets round it left out. The text is

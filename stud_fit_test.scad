@@ -5,11 +5,12 @@
 //  One print finds the stud and socket sizes for parametric_brick_boxes.scad.
 //  An L-shaped strip, printed as modelled (base flat on the bed):
 //    - top: a 2 x 2 group of upright studs per diameter, like the lid
-//    - underside: a 2 x 2 group of sockets per diameter, open on the bed
-//      like the box's bottom and top sockets
+//    - underside: a 2 x 2 socket group per diameter (a recess with a tube,
+//      like a brick's underside), open on the bed like the box's top and
+//      bottom sockets
 //    - back wall: a 2 x 2 group of sideways studs per diameter on its back
 //      face, printed the same way as the box walls (flat underside included),
-//      and a group of teardrop sockets in its front face, like the wall sockets
+//      and a socket group in its front face, like the wall sockets
 //  Each diameter is engraved in front of its groups. Press a real 2 x 2
 //  plate onto each stud group and into each socket group (or the studs you
 //  mean to use them with): pick the sizes that clutch like LEGO, then set
@@ -52,24 +53,23 @@ module side_stud(d) intersection() {
     translate([-d, -d / 2 + side_stud_flat, -1]) cube([2 * d, 2 * d, stud_h + 2]);
 }
 
-// same socket cutters as the box file: going +z from z = 0, chamfered mouth
+// same sockets as the box file, for a 2 x 2 group centred on the origin: a
+// recess round the four studs with a hollow tube in the middle touching all
+// four, going +z from z = 0, chamfered mouth
 SOCKET_H = stud_h + 0.2;
 SOCKET_CH = 0.4;
-module socket(d) {
-    translate([0, 0, -1]) cylinder(d = d, h = SOCKET_H + 1, $fn = 48);
-    translate([0, 0, -1]) cylinder(d = d + 2 * SOCKET_CH, h = 1 + eps, $fn = 48);
-    cylinder(d1 = d + 2 * SOCKET_CH, d2 = d, h = SOCKET_CH, $fn = 48);
-}
-// teardrop pointing local +y, its tip flattened 0.2 mm past the circle
-module teardrop(d) intersection() {
-    hull() { circle(d = d, $fn = 48); polygon([[-eps, d / sqrt(2)], [eps, d / sqrt(2)], [0, 0]]); }
-    translate([-d, -d]) square([2 * d, 1.5 * d + 0.2]);
-}
-module side_socket(d) {
-    translate([0, 0, -1]) linear_extrude(SOCKET_H + 1) teardrop(d);
-    hull() {
-        translate([0, 0, -1]) linear_extrude(1 + eps) teardrop(d + 2 * SOCKET_CH);
-        translate([0, 0, SOCKET_CH]) linear_extrude(eps) teardrop(d);
+module socket_group(d) let(w = PITCH + d, od = PITCH * sqrt(2) - d) difference() {
+    union() {
+        translate([0, 0, -1]) linear_extrude(SOCKET_H + 1) square(w, center = true);
+        for (i = [0:3]) translate([0, 0, i * SOCKET_CH / 4 - (i == 0 ? 1 : 0)])
+            linear_extrude(SOCKET_CH / 4 + (i == 0 ? 1 : 0) + eps) square(w + 2 * SOCKET_CH * (1 - i / 4), center = true);
+    }
+    difference() {
+        union() {
+            cylinder(d1 = od - 2 * SOCKET_CH, d2 = od, h = SOCKET_CH + eps, $fn = 48);
+            translate([0, 0, SOCKET_CH]) cylinder(d = od, h = SOCKET_H, $fn = 48);
+        }
+        translate([0, 0, -1]) cylinder(d = od - 1.6, h = SOCKET_H + 2, $fn = 48);
     }
 }
 
@@ -81,12 +81,12 @@ difference() {
     for (i = [0:N - 1])
         translate([gx(i) + PITCH / 2, LABEL / 2, T - 0.6])
             linear_extrude(1) text(fmt(sizes[i]), size = 4, font = font, halign = "center", valign = "center");
-    for (i = [0:N - 1], a = [0, 1], b = [0, 1]) {
-        // underside: 2 x 2 sockets under the top studs
-        translate([gx(i) + a * PITCH, LABEL + PITCH / 2 + b * PITCH, 0]) socket(sizes[i]);
-        // wall front face: 2 x 2 sockets going in (+y) behind the side studs, tip up as printed
-        translate([gx(i) + a * PITCH, WALL_Y, T + 4 + PITCH / 2 + b * PITCH])
-            rotate([-90, 0, 0]) mirror([0, 1, 0]) side_socket(sizes[i]);
+    for (i = [0:N - 1]) {
+        // underside: a 2 x 2 socket group under the top studs
+        translate([gx(i) + PITCH / 2, LABEL + PITCH, 0]) socket_group(sizes[i]);
+        // wall front face: a 2 x 2 socket group going in (+y) behind the side studs
+        translate([gx(i) + PITCH / 2, WALL_Y, T + 4 + PITCH])
+            rotate([90, 0, 0]) mirror([0, 0, 1]) socket_group(sizes[i]);
     }
 }
 for (i = [0:N - 1], a = [0, 1], b = [0, 1]) {

@@ -7,7 +7,8 @@
 //    - every dimension is LEGO units: footprints in studs (8 mm pitch,
 //      0.1 mm play per side), heights in stud rows (8 mm)
 //    - each face - top, bottom, front, back, left, right - is studs,
-//      sockets (holes that take studs) or flat, edge to edge. The walls
+//      sockets (like a brick's underside: a shallow recess with tubes, or pins
+//      along a single row, that studs press into) or flat, edge to edge. The walls
 //      run from the bed up to the seam and round the lid band (not the back
 //      of its bottom row, which lands on the wall top at 90 deg)
 //    - a flat, hollow lid, so plates press onto its top studs and pry off
@@ -37,7 +38,8 @@
 //  onto the pins, then close it. Tune hinge_play for stiffness.
 //  Side studs print as short horizontal pegs, with a small flat shaved off
 //  the side facing down as printed (side_stud_flat) so the worst of the
-//  overhang is gone. Side sockets are teardrops, pointed up as printed.
+//  overhang is gone. Wall sockets print with a short flat overhang over each
+//  recess, and their tubes and pins as short horizontal pegs.
 //  Print stud_fit_test.scad, then a 6 x 5 box, to tune stud_d / side_stud_d /
 //  socket_d / side_socket_d / lid_clear.
 //  Set row for where the box stands on the shelf, then export with part = print / body / lid.
@@ -68,7 +70,7 @@ row = 0;                // [0:1:6]
 corner_r = 1;           // [0:0.25:1.5]
 
 /* [Studs] */
-// each face, edge to edge: studs, sockets (holes that take studs) or flat
+// each face, edge to edge: studs, sockets (a recess with tubes that takes studs, like a brick's underside) or flat
 top = "studs";          // [studs, sockets, flat]
 bottom = "flat";        // [studs, sockets, flat]
 front = "studs";        // [studs, sockets, flat]
@@ -82,7 +84,7 @@ stud_h = 1.8;           // [1.2:0.1:2]
 side_stud_d = 4.85;     // [4.6:0.05:5.1]
 // flat shaved off the underside of wall studs, for a cleaner overhang
 side_stud_flat = 0.4;   // [0:0.1:1]
-// socket diameter in the top and bottom - tune for clutch on the studs you'll press in
+// top and bottom sockets: the gap a stud squeezes into, between recess wall and tube - tune for clutch
 socket_d = 4.9;         // [4.6:0.05:5.3]
 // wall sockets print sideways and size differently - tune separately
 side_socket_d = 4.9;    // [4.6:0.05:5.3]
@@ -188,7 +190,8 @@ LABEL_UPRIGHT = is_undef(LABEL_TM) ? let(w = len(label) * label_size * 0.7) [[-w
                                    : [LABEL_TM.position, LABEL_TM.position + LABEL_TM.size];
 LABEL_BOX = let(b = LABEL_UPRIGHT, t = tan(label_slant))   // slanted, the top leans right and the bottom left
     [[b[0][0] + min(t * b[0][1], t * b[1][1]), b[0][1]], [b[1][0] + max(t * b[0][1], t * b[1][1]), b[1][1]]];
-function in_label(fs, x, y) = let(r = (top == "sockets" ? socket_d / 2 + SOCKET_CH : stud_d / 2) + LABEL_GAP)
+// (sockets: a whole stud cell clear of it, so the socket field round it stays whole)
+function in_label(fs, x, y) = let(r = (top == "sockets" ? PITCH / 2 : stud_d / 2) + LABEL_GAP)
     LABEL && x > LABEL_BOX[0][0] - r && x < LABEL_BOX[1][0] + r && y > LABEL_BOX[0][1] - r && y < LABEL_BOX[1][1] + r;
 module label2d(fs) multmatrix([[1, tan(label_slant), 0, 0], [0, 1, 0, 0], [0, 0, 1, 0]]) text(label, size = label_size, font = label_font, halign = "center", valign = "center");
 
@@ -215,49 +218,81 @@ module side_stud(lid = false) intersection() {
         translate([-side_stud_d, -side_stud_d / 2 + side_stud_flat, -1]) cube([2 * side_stud_d, 2 * side_stud_d, stud_h + 2]);
 }
 
-// socket cutters, going +z into the face from z = 0, with a chamfered mouth.
-// Top and bottom: round, the roof a short bridge
-module socket() {
-    translate([0, 0, -1]) cylinder(d = socket_d, h = SOCKET_H + 1, $fn = 48);
-    translate([0, 0, -1]) cylinder(d = socket_d + 2 * SOCKET_CH, h = 1 + eps, $fn = 48);
-    cylinder(d1 = socket_d + 2 * SOCKET_CH, d2 = socket_d, h = SOCKET_CH, $fn = 48);
-}
-// walls: a teardrop pointing up as printed, so the hole has no overhang,
-// its tip flattened 0.2 mm past the circle (a short bridge) so it stays
-// clear of the lid's groove. Local +y ends up pointing down (up for the lid,
-// which prints inverted)
-module teardrop(d) intersection() {
-    hull() { circle(d = d, $fn = 48); polygon([[-eps, d / sqrt(2)], [eps, d / sqrt(2)], [0, 0]]); }
-    translate([-d, -d]) square([2 * d, 1.5 * d + 0.2]);
-}
-module side_socket(lid = false) mirror([0, lid ? 0 : 1, 0]) {
-    translate([0, 0, -1]) linear_extrude(SOCKET_H + 1) teardrop(side_socket_d);
-    hull() {
-        translate([0, 0, -1]) linear_extrude(1 + eps) teardrop(side_socket_d + 2 * SOCKET_CH);
-        translate([0, 0, SOCKET_CH]) linear_extrude(eps) teardrop(side_socket_d);
+// LEGO-style sockets on a face, like a brick's underside: one shallow
+// recess round a grid of stud positions (us x vs, the face's own 2D
+// coordinates), each stud gripped between the recess wall and hollow tubes
+// standing in it - or, along a single row, small solid pins between the
+// studs. A cutter going +z into the face from z = 0, with a chamfered
+// mouth: lead-in, and room for first-layer squish.
+//   keep: [u0, u1, v0, v1], for each edge its coordinate when the face
+//         across that edge has sockets too, else undef. The recess then
+//         stays KEEP back from that edge so the corner stays solid, and the
+//         edge studs get round holes.
+//   skip: stud positions left solid, a whole stud cell each
+KEEP = SOCKET_H + 0.8;
+function mids(a) = [for (i = [0:len(a) - 2]) (a[i] + a[i + 1]) / 2];
+function edge_stud(a, i, lo, hi) = (!is_undef(lo) && i == 0) || (!is_undef(hi) && i == len(a) - 1);
+
+module recess2d(us, vs, d, keep, skip) let(r = d / 2, nu = len(us), nv = len(vs),
+        u0 = is_undef(keep[0]) ? us[0] - r : max(us[0] - r, keep[0] + KEEP),
+        u1 = is_undef(keep[1]) ? us[nu - 1] + r : min(us[nu - 1] + r, keep[1] - KEEP),
+        v0 = is_undef(keep[2]) ? vs[0] - r : max(vs[0] - r, keep[2] + KEEP),
+        v1 = is_undef(keep[3]) ? vs[nv - 1] + r : min(vs[nv - 1] + r, keep[3] - KEEP))
+    difference() {
+        union() {
+            if (u1 > u0 && v1 > v0) translate([u0, v0]) square([u1 - u0, v1 - v0]);
+            for (i = [0:nu - 1], j = [0:nv - 1])
+                if (edge_stud(us, i, keep[0], keep[1]) || edge_stud(vs, j, keep[2], keep[3])) translate([us[i], vs[j]]) circle(d = d, $fn = 48);
+        }
+        for (s = skip) translate(s) square(PITCH, center = true);
     }
+
+// a tube (id > 0) or pin standing in the recess, its tip chamfered
+module socket_post(od, id = 0) difference() {
+    union() {
+        cylinder(d1 = od - 2 * SOCKET_CH, d2 = od, h = SOCKET_CH + eps, $fn = 48);
+        translate([0, 0, SOCKET_CH]) cylinder(d = od, h = SOCKET_H, $fn = 48);
+    }
+    if (id > 0) translate([0, 0, -1]) cylinder(d = id, h = SOCKET_H + 2, $fn = 48);
+}
+
+module socket_field(us, vs, d, keep = [undef, undef, undef, undef], skip = []) difference() {
+    union() {
+        translate([0, 0, -1]) linear_extrude(SOCKET_H + 1) recess2d(us, vs, d, keep, skip);
+        for (i = [0:3]) translate([0, 0, i * SOCKET_CH / 4 - (i == 0 ? 1 : 0)])
+            linear_extrude(SOCKET_CH / 4 + (i == 0 ? 1 : 0) + eps) offset(delta = SOCKET_CH * (1 - i / 4)) recess2d(us, vs, d, keep, skip);
+    }
+    // tubes touch the 4 studs round them (od + d = the diagonal pitch), walls 0.8 thick; pins touch the 2 either side
+    if (len(us) > 1 && len(vs) > 1) for (u = mids(us), v = mids(vs)) translate([u, v, 0]) let(od = PITCH * sqrt(2) - d) socket_post(od, od - 1.6);
+    else if (len(us) > 1) for (u = mids(us)) translate([u, vs[0], 0]) socket_post(PITCH - d);
+    else if (len(vs) > 1) for (v = mids(vs)) translate([us[0], v, 0]) socket_post(PITCH - d);
 }
 
 // one stud grid over each whole side, body and lid band together: studs
-// standing straight off the wall, or sockets going into it - whichever kind
-// the face is set to. Each part takes the positions between z0 and z1 (the
-// back only above back_z0); any that would straddle the seam are left out.
+// standing straight off the wall, or a socket field going into it -
+// whichever kind the face is set to. Each part takes the rows between z0
+// and z1 (the back only above back_z0); any that would straddle the seam
+// are left out.
 module side_faces(fs, H, z0, z1, kind, back_z0 = -1, lid = false) {
     L = mm(fs[0]); W = mm(fs[1]);
-    r = kind == "studs" ? side_stud_d / 2 : side_socket_d / 2 + SOCKET_CH;
+    r = kind == "studs" ? side_stud_d / 2 : side_socket_d / 2;
     dl = detent_len * PITCH + 0.6;
-    faces = [[front, 0, W / 2, fs[0], z0], [back, 180, W / 2, fs[0], max(z0, back_z0)],
-             [right, 90, L / 2, fs[1], z0], [left, -90, L / 2, fs[1], z0]];
-    for (f = faces) if (f[0] == kind) rotate(f[1]) translate([0, -f[2], 0])
-        for (q = face_pts(f[3] * PITCH, H))
-            let(z = H / 2 + q[1],
-                // lid sockets keep clear of the detent pockets behind the front's bottom row
-                clash = kind == "sockets" && lid && f[1] == 0 && z < z0 + PITCH
-                        && len([for (x = detent_xs(fs)) if (abs(q[0] - x) < dl / 2 + r) x]) > 0)
-            if (z - r > f[4] && z + r < z1 && !clash) {
-                if (kind == "studs") translate([q[0], eps, z]) rotate([90, 0, 0]) side_stud(lid);
-                else translate([q[0], 0, z]) rotate([-90, 0, 0]) side_socket(lid);
-            }
+    // [kind, rotation, distance out, width in studs, lowest z, the faces to its left and right as seen from outside]
+    faces = [[front, 0, W / 2, fs[0], z0, left, right], [back, 180, W / 2, fs[0], max(z0, back_z0), right, left],
+             [right, 90, L / 2, fs[1], z0, front, back], [left, -90, L / 2, fs[1], z0, back, front]];
+    for (f = faces) if (f[0] == kind) rotate(f[1]) translate([0, -f[2], 0]) {
+        if (kind == "studs") for (q = face_pts(f[3] * PITCH, H)) let(z = H / 2 + q[1])
+            if (z - r > f[4] && z + r < z1) translate([q[0], eps, z]) rotate([90, 0, 0]) side_stud(lid);
+        if (kind == "sockets") let(us = cols(f[3]), nz = round(H / PITCH),
+                zs = [for (k = [0:nz - 1]) let(z = H / 2 + (k - (nz - 1) / 2) * PITCH) if (z - r > f[4] && z + r < z1) z],
+                hw = mm(f[3]) / 2,
+                // lid: no sockets in front of the detent pockets, behind the front's bottom row
+                skip = lid && f[1] == 0 ? [for (u = us, z = zs) if (z < z0 + PITCH && len([for (x = detent_xs(fs)) if (abs(u - x) < dl / 2 + PITCH / 2) x]) > 0) [u, z]] : [])
+            if (len(zs) > 0) rotate([90, 0, 0]) mirror([0, 0, 1])   // face coordinates (u, z), cutting in (+y)
+                socket_field(us, zs, side_socket_d,
+                    [f[5] == "sockets" ? -hw : undef, f[6] == "sockets" ? hw : undef,
+                     !lid && bottom == "sockets" ? 0 : undef, lid && top == "sockets" ? H : undef], skip);
+    }
 }
 
 // ---------------------------------------------------------------------
@@ -433,7 +468,10 @@ module box_body(fs, H) {
         }
         // last, so nothing inside (the hinge buttresses reach down into the floor) fills them
         side_faces(fs, H, 0, seam, "sockets");
-        if (bottom == "sockets") for (x = cols(fs[0]), y = cols(fs[1])) translate([x, y, 0]) socket();
+        if (bottom == "sockets") let(L = mm(fs[0]), W = mm(fs[1]))
+            socket_field(cols(fs[0]), cols(fs[1]), socket_d,
+                [left == "sockets" ? -L / 2 : undef, right == "sockets" ? L / 2 : undef,
+                 front == "sockets" ? -W / 2 : undef, back == "sockets" ? W / 2 : undef]);
     }
 }
 
@@ -455,12 +493,16 @@ module box_lid(fs, H) {
         detent_cuts(fs, H);
         lid_hollow(fs, H);
         side_faces(fs, H, seam, H, "sockets", seam + PITCH, true);
-        // top sockets, except any that would reach down into a hinge slot
+        // top socket field, solid wherever it would reach down into a hinge slot, and round the label
         if (top == "sockets") let(a = hinge_axis(fs, H), deep = H - SOCKET_H - 0.4 < a[1] + TAB_R + hinge_clear,
-                                  sx = TAB_W / 2 + hinge_clear + socket_d / 2 + 0.4, sy = a[0] - TAB_R - hinge_clear - socket_d / 2 - 0.4)
-            for (x = cols(fs[0]), y = cols(fs[1]))
-                if (!(deep && y > sy && len([for (tx = tab_xs(fs)) if (abs(x - tx) < sx) tx]) > 0) && !in_label(fs, x, y))
-                    translate([x, y, H]) mirror([0, 0, 1]) socket();
+                                  sx = TAB_W / 2 + hinge_clear + 0.4 + PITCH / 2, sy = a[0] - TAB_R - hinge_clear - 0.4 - PITCH / 2,
+                                  L = mm(fs[0]), W = mm(fs[1]))
+            translate([0, 0, H]) mirror([0, 0, 1])
+                socket_field(cols(fs[0]), cols(fs[1]), socket_d,
+                    [left == "sockets" ? -L / 2 : undef, right == "sockets" ? L / 2 : undef,
+                     front == "sockets" ? -W / 2 : undef, back == "sockets" && LID_ROWS > 1 ? W / 2 : undef],
+                    [for (x = cols(fs[0]), y = cols(fs[1]))
+                        if ((deep && y > sy && len([for (tx = tab_xs(fs)) if (abs(x - tx) < sx) tx]) > 0) || in_label(fs, x, y)) [x, y]]);
         if (LABEL && !RAISED && LABEL_D > 0) translate([0, 0, H - LABEL_D]) linear_extrude(LABEL_D + 1) label2d(fs);
     }
     // round the lid band, but not the back of its bottom row, which lands on the wall top at 90 deg
