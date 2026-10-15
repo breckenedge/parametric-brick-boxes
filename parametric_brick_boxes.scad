@@ -479,7 +479,10 @@ module lid_hollow(fs, H) let(seam = H - LID_H,
         if (PIP) let(z0 = seam + SEAT + lid_clear) along_front(fs, -mm(fs[0]), mm(fs[0]))
             polygon([[-1, z0 - eps], [ins, z0 - eps], [ins + H - z0 + 1, H + 1], [-1, H + 1]]);
         for (tx = tab_xs(fs)) translate([tx - hx, mm(fs[1]) / 2 - hy, seam - 2]) cube([2 * hx, hy + 1, LID_H + 2]);
-        for (x = detent_xs(fs)) translate([x - dx, -mm(fs[1]) / 2 - 1, seam - 2]) cube([2 * dx, dy + 1, LID_H + 2]);
+        for (x = detent_xs(fs))
+            if (!PIP) translate([x - dx, -mm(fs[1]) / 2 - 1, seam - 2]) cube([2 * dx, dy + 1, LID_H + 2]);
+            // printed in place its inner face would be a flat ceiling: slope it 45 deg in to the top skin
+            else along_front(fs, x - dx, x + dx) polygon([[-1, seam - 2], [dy, seam - 2], [dy, seam], [dy + LID_H + 1, H + 1], [-1, H + 1]]);
     }
 
 module box_body(fs, H) {
