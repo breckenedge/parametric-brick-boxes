@@ -11,7 +11,8 @@
 //    - back wall: a 2 x 2 group of sideways studs per diameter on its back
 //      face, printed the same way as the box walls (flat underside included),
 //      and a socket group in its front face, like the wall sockets
-//  Each diameter is engraved in front of its groups. Press a real 2 x 2
+//  Each group has its diameter engraved beside it (the underside's mirrored,
+//  to read with the strip flipped over front to back). Press a real 2 x 2
 //  plate onto each stud group and into each socket group (or the studs you
 //  mean to use them with): pick the sizes that clutch like LEGO, then set
 //  stud_d, side_stud_d, socket_d and side_socket_d in the box file to match.
@@ -36,11 +37,14 @@ L = N * GROUP - PITCH + 2 * M;
 LABEL = 9;              // label strip in front of the top studs
 WALL_Y = LABEL + 2 * PITCH + 0.5;   // wall just behind where a 2 x 2 plate on the top studs ends
 BASE_D = WALL_Y + T;
-WALL_H = T + 2 * PITCH + 6;
+WALL_H = T + 2 * PITCH + 10;   // room above the wall groups for their labels
+GROUP_Z = T + 4 + PITCH;        // centre height of the wall groups
+WALL_LABEL_Z = (GROUP_Z + PITCH + WALL_H) / 2;   // between the top of the wall groups and the wall top
 eps = 0.01;
 
 function gx(i) = M + PITCH / 2 + i * GROUP;      // x of the first stud in group i
-function fmt(v) = let(c = round(v * 100)) str(floor(c / 100), ".", c % 100 < 10 ? "0" : "", c % 100);   // 4.9 -> "4.90"
+module label(i) text(fmt(sizes[i]), size = 4, font = font, halign = "center", valign = "center");
+function fmt(v) =let(c = round(v * 100)) str(floor(c / 100), ".", c % 100 < 10 ? "0" : "", c % 100);   // 4.9 -> "4.90"
 
 // same profile as the box file: 0.3 mm chamfer on the tip
 module stud_shape(d) {
@@ -78,22 +82,25 @@ difference() {
         cube([L, BASE_D, T]);
         translate([0, WALL_Y, 0]) cube([L, T, WALL_H]);
     }
-    for (i = [0:N - 1])
-        translate([gx(i) + PITCH / 2, LABEL / 2, T - 0.6])
-            linear_extrude(1) text(fmt(sizes[i]), size = 4, font = font, halign = "center", valign = "center");
-    for (i = [0:N - 1]) {
+    for (i = [0:N - 1]) let(x = gx(i) + PITCH / 2) {
+        // labels, 0.6 mm deep, one by every group: top (in front of the top studs),
+        // underside (mirrored, to read with the strip flipped front to back),
+        // and above the groups on both faces of the wall
+        translate([x, LABEL / 2, T - 0.6]) linear_extrude(1) label(i);
+        translate([x, LABEL / 2, -1]) linear_extrude(1.6) mirror([0, 1, 0]) label(i);
+        translate([x, WALL_Y + 0.6, WALL_LABEL_Z]) rotate([90, 0, 0]) linear_extrude(1) label(i);
+        translate([x, WALL_Y + T - 0.6, WALL_LABEL_Z]) rotate([90, 0, 180]) linear_extrude(1) label(i);
         // underside: a 2 x 2 socket group under the top studs
-        translate([gx(i) + PITCH / 2, LABEL + PITCH, 0]) socket_group(sizes[i]);
+        translate([x, LABEL + PITCH, 0]) socket_group(sizes[i]);
         // wall front face: a 2 x 2 socket group going in (+y) behind the side studs
-        translate([gx(i) + PITCH / 2, WALL_Y, T + 4 + PITCH])
-            rotate([90, 0, 0]) mirror([0, 0, 1]) socket_group(sizes[i]);
+        translate([x, WALL_Y, GROUP_Z]) rotate([90, 0, 0]) mirror([0, 0, 1]) socket_group(sizes[i]);
     }
 }
 for (i = [0:N - 1], a = [0, 1], b = [0, 1]) {
     // top: 2 x 2 upright
     translate([gx(i) + a * PITCH, LABEL + PITCH / 2 + b * PITCH, T - eps]) stud_shape(sizes[i]);
     // back wall: 2 x 2 sideways, pointing back (+y)
-    translate([gx(i) + a * PITCH, WALL_Y + T - eps, T + 4 + PITCH / 2 + b * PITCH])
+    translate([gx(i) + a * PITCH, WALL_Y + T - eps, GROUP_Z - PITCH / 2 + b * PITCH])
         rotate([-90, 0, 0]) rotate([0, 0, 180]) side_stud(sizes[i]);   // flat ends up underneath
 }
  
