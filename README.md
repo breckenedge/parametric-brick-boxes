@@ -45,9 +45,10 @@ or flat), with storage inside.
   Or pick `part = print_in_place` to print it all as one piece, with the lid standing open
   on the body: no assembly, at the cost of a loose hinge in place of the friction one
   (`pip_gap` sets the clearance between the parts).
-  For reference, on the author's Bambu Lab A1 printing SUNLU PLA 2.0+, these clutch
-  well: `stud_d` (top studs) 5.00–5.05, `side_stud_d` (side studs) 4.95–5.00,
-  `socket_d` (top and bottom sockets) 4.85–4.90 and `side_socket_d` (side sockets)
+  For reference, on the author's Bambu Lab A1 printing
+  [SUNLU PLA 2.0+](https://www.breckenridge.dev/amazon.html?asin=B0FG7VTXTY) (affiliate link), these clutch
+  well: `stud_d` (top studs) 5.05, `side_stud_d` (side studs) 4.95–5.00,
+  `socket_d` (top and bottom sockets) 4.95 and `side_socket_d` (side sockets)
   4.85–4.95.
 
 ## Use
@@ -70,3 +71,6 @@ The label's default font, [Fredoka](https://fonts.google.com/specimen/Fredoka)
 
 LEGO® is a trademark of the LEGO Group, which does not sponsor, authorize or endorse
 this project.
+
+As an Amazon Associate I earn from qualifying purchases made through the product links
+above.
