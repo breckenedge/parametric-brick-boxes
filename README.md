@@ -50,6 +50,12 @@ or flat), with storage inside.
   well: `stud_d` (top studs) 5.05, `side_stud_d` (side studs) 4.95–5.00,
   `socket_d` (top and bottom sockets) 4.95 and `side_socket_d` (side sockets)
   4.85–4.95.
+- `3mf/` has ready-to-print Bambu Studio projects for the A1 (0.4 mm nozzle, SUNLU PLA+
+  2.0, 0.20mm Standard, textured PEI plate) at 6 x 5, 8 x 8, 16 x 8 and 22 x 8 studs,
+  3 rows tall. Each size comes two-piece (`brick_box_<size>.3mf`, supports on for the
+  lid's studs) and in one piece (`brick_box_<size>_print_in_place.3mf`). They use
+  `stud_d` 5.05, `side_stud_d` 5.00, `socket_d` 4.95 and `side_socket_d` 4.90; on
+  another printer or filament, print the fit test and make your own.
 
 ## Use
 
