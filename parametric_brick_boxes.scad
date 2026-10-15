@@ -53,11 +53,11 @@ lid_open = 0;           // [0:5:90]
 
 /* [Box size] */
 // box length, left to right, studs (the whole footprint)
-studs_l = 21;           // [4:1:40]
+studs_l = 22;           // [4:1:40]
 // box width, front to back, studs
-studs_w = 12;           // [4:1:30]
+studs_w = 8;            // [4:1:30]
 // stud rows on the sides of a front-row box, the lid band's included - sets the box height
-side_rows = 2;          // [2:1:30]
+side_rows = 3;          // [2:1:30]
 // stud rows on the lid band, out of side_rows (the body keeps at least one)
 lid_rows = 1;           // [1:1:10]
 // extra stud rows for each row further back
