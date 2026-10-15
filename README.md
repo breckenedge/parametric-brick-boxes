@@ -19,7 +19,7 @@ with storage inside.
   many of those rows are lid. A lid taller than one row swings out behind the box by
   8 mm per extra row when it's open.
 - Turn any face's studs off in the Customizer's **Studs** group: `top_studs` for the lid
-  top, `studs_front`, `studs_back`, `studs_left` and `studs_right` for the walls. A plain
+  top, `bottom_studs` for the underside, `studs_front`, `studs_back`, `studs_left` and `studs_right` for the walls. A plain
   face is flat, ready for a label, or to stand flush against a wall or another box.
 - Set `row` for where the box will stand (0 = front): each row back is taller, so
   whatever stands on the boxes in back sits higher.
@@ -30,8 +30,9 @@ with storage inside.
 - Snaps shut on a detent: a bead on the front wall top clicks into the lid; squeeze the
   middle of the box front to release it (`detent_count`, `detent_len`; `detent_bump` sets
   how firm the snap is).
-- The body prints upright without supports; the lid prints inverted (top down), its top
-  studs on supports. Print `stud_fit_test.scad` first to find your stud sizes, then
+- Both parts print standing on their studs, on supports: the body upright on its bottom
+  studs, the lid inverted (top down) on its top studs. With `bottom_studs` or `top_studs`
+  off, that part prints flat without supports. Print `stud_fit_test.scad` first to find your stud sizes, then
   a small 6 x 5 box to check the whole fit.
   For reference, on the author's Bambu Lab A1 printing SUNLU PLA 2.0+,
   `stud_d = 5.05` (top) and `side_stud_d = 5.00` (sides) clutch well.

@@ -22,8 +22,9 @@
 //  Box size is studs_l x studs_w, the whole footprint.
 //
 //  Printing:
-//    body  upright as modelled (open top up, flat floor on the bed), no
-//          supports
+//    body  upright as modelled (open top up). Its bottom studs land on the
+//          bed and need supports (or set bottom_studs off for a flat floor,
+//          no supports)
 //    lid   inverted: top down, open underside up. Its top studs land on
 //          the bed and need supports (or set top_studs off for a flat
 //          top); everything else - the 45 deg
@@ -62,6 +63,8 @@ corner_r = 1;           // [0:0.25:1.5]
 /* [Studs] */
 // studs over the whole top (off = plain)
 top_studs = true;
+// studs over the whole underside, pointing down (off = flat floor)
+bottom_studs = true;
 studs_front = true;
 studs_back = true;
 studs_left = true;
@@ -332,6 +335,7 @@ module box_body(fs, H) {
         detent_trim(fs, H);
     }
     side_studs(fs, H, 0, seam);
+    if (bottom_studs) for (x = cols(fs[0]), y = cols(fs[1])) translate([x, y, eps]) mirror([0, 0, 1]) stud();
     hinge_tabs(fs, H);
     detent_catches(fs, H);
 }
@@ -374,18 +378,20 @@ echo(str("\n==== Parametric brick box ====",
     "\n  size     ", FS[0], " x ", FS[1], " studs (", round(mm(FS[0])), " x ", round(mm(FS[1])), " mm), ",
                      BH / PLATE, " plates (", BH, " mm) tall",
     "\n  row      ", row, ": side_rows ", side_rows, row > 0 ? str(" + ", row, " x rise ", rise) : "", " = ", ROWS, " stud rows, the top ", LID_ROWS, " on the lid\n"));
-if (max(mm(FS[0]), mm(FS[1])) > max(bed_x, bed_y) || min(mm(FS[0]), mm(FS[1])) > min(bed_x, bed_y) || BH > bed_z)
+if (max(mm(FS[0]), mm(FS[1])) > max(bed_x, bed_y) || min(mm(FS[0]), mm(FS[1])) > min(bed_x, bed_y) || BH + (bottom_studs ? stud_h : 0) + (top_studs ? stud_h : 0) > bed_z)
     echo("WARNING: the box is too big for the printer bed");
 if (WALL < 3.2) echo(str("NOTE: ", WALL, " mm walls leave a ", SEAT, " mm seat ridge and ", DT_U - lid_clear - detent_bump - 0.1, " mm of lid skin over the detent"));
 if (tab_xs(FS)[1] < TAB_W / 2 + hinge_clear + PIN_L + 2)
     echo(str("WARNING: the box is too short for hinge tabs ", hinge_from_end, " studs from each end - lower hinge_from_end"));
 
+BODY_TIP = bottom_studs ? stud_h - eps : 0;   // body printed upright: its bottom studs reach the bed
 LID_TIP = top_studs ? stud_h - eps : 0;   // lid printed inverted: its top studs reach the bed
+module body_print() translate([0, 0, BODY_TIP]) box_body(FS, BH);
 module lid_print() translate([0, 0, BH + LID_TIP]) rotate([180, 0, 0]) box_lid(FS, BH);
 if (part == "assembled") box();
-else if (part == "body") color(body_color) box_body(FS, BH);
+else if (part == "body") color(body_color) body_print();
 else if (part == "lid") color(lid_color) lid_print();
 else {   // print: body upright and lid inverted, side by side
-    color(body_color) box_body(FS, BH);
+    color(body_color) body_print();
     color(lid_color) translate([0, mm(FS[1]) + 15, 0]) lid_print();
 }
