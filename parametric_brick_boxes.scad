@@ -268,6 +268,14 @@ module plan(fs, ins = 0) let(r = max(corner_r - ins, 0.5))
 
 module slab(fs, z, ins) translate([0, 0, z]) linear_extrude(eps) plan(fs, ins);
 
+// the plan extruded from z0 to z1, its top perimeter rounded over by corner_r too
+module rounded_top(fs, z0, z1) let(r = corner_r, n = 8)
+    if (r <= 0) translate([0, 0, z0]) linear_extrude(z1 - z0) plan(fs);
+    else hull() {
+        translate([0, 0, z0]) linear_extrude(z1 - z0 - r) plan(fs);
+        for (i = [1:n]) let(t = 90 * i / n) slab(fs, z1 - r + r * sin(t) - eps, r - r * cos(t));
+    }
+
 // 45 deg seat ridge on the wall tops: from inset a at height z up and in by h
 module ridge(fs, z, a, h) hull() { slab(fs, z, a); slab(fs, z + h, a + h); }
 
@@ -437,7 +445,7 @@ module box_lid(fs, H) {
     difference() {
         union() {
             difference() {
-                translate([0, 0, seam]) linear_extrude(LID_H) plan(fs);
+                rounded_top(fs, seam, H);
                 // the groove stops at the axis; behind it the lid is solid over the wall
                 front_of(fs, mm(fs[1]) / 2 - HR) ridge(fs, seam - 1, RIM - lid_clear - 1, SEAT + lid_clear + 1);
             }
