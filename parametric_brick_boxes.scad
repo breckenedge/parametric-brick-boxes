@@ -7,8 +7,8 @@
 //    - every dimension is LEGO units: footprints in studs (8 mm pitch,
 //      0.1 mm play per side), heights in stud rows (8 mm)
 //    - studs edge to edge over every side, from the bed up to the seam,
-//      and rows round the lid band (not its back, which lands on the wall
-//      top at 90 deg)
+//      and rows round the lid band (not the back of its bottom row, which
+//      lands on the wall top at 90 deg)
 //    - a flat, hollow lid with studs standing on its top face, so plates press on
 //      and pry off easily (or a plain top, with top_studs off)
 //    - lid (the top band) over an open storage box, hinged on two tabs at
@@ -164,15 +164,15 @@ module side_stud(top = false) intersection() {
 }
 
 // one stud grid over each whole side, body and lid band together, standing
-// straight off the wall. Each part takes the studs between z0 and z1; any
-// that would straddle the seam are left out.
-module side_studs(fs, H, z0, z1, back = true, top = false) {
+// straight off the wall. Each part takes the studs between z0 and z1 (the
+// back only above back_z0); any that would straddle the seam are left out.
+module side_studs(fs, H, z0, z1, back_z0 = -1, top = false) {
     L = mm(fs[0]); W = mm(fs[1]); r = side_stud_d / 2;
-    faces = [[studs_front, 0, W / 2, fs[0]], [studs_back && back, 180, W / 2, fs[0]],
-             [studs_right, 90, L / 2, fs[1]], [studs_left, -90, L / 2, fs[1]]];
+    faces = [[studs_front, 0, W / 2, fs[0], z0], [studs_back, 180, W / 2, fs[0], max(z0, back_z0)],
+             [studs_right, 90, L / 2, fs[1], z0], [studs_left, -90, L / 2, fs[1], z0]];
     for (f = faces) if (f[0]) rotate(f[1]) translate([0, -f[2], 0])
         for (q = face_pts(f[3] * PITCH, H))
-            let(z = H / 2 + q[1]) if (z - r > z0 && z + r < z1)
+            let(z = H / 2 + q[1]) if (z - r > f[4] && z + r < z1)
                 translate([q[0], eps, z]) rotate([90, 0, 0]) side_stud(top);
 }
 
@@ -354,8 +354,8 @@ module box_lid(fs, H) {
         detent_cuts(fs, H);
         lid_hollow(fs, H);
     }
-    // round the lid band, but not the back, which lands on the wall top at 90 deg
-    side_studs(fs, H, seam, H, false, true);
+    // round the lid band, but not the back of its bottom row, which lands on the wall top at 90 deg
+    side_studs(fs, H, seam, H, seam + PITCH, true);
     if (top_studs) for (x = cols(fs[0]), y = cols(fs[1])) translate([x, y, H - eps]) stud();
 }
 
