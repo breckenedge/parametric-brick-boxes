@@ -6,7 +6,8 @@
 //  An L-shaped strip, printed as modelled (base flat on the bed):
 //    - top: a 2 x 2 group of upright studs per diameter, like the lid
 //    - underside: a 2 x 2 socket group per diameter (a recess with a tube,
-//      like a brick's underside), open on the bed like the box's top and
+//      like a brick's underside) and a 1 x 2 group with a pin beside it,
+//      open on the bed like the box's top and
 //      bottom sockets
 //    - back wall: a 2 x 2 group of sideways studs per diameter on its back
 //      face, printed the same way as the box walls (flat underside included),
@@ -32,7 +33,7 @@ font = "Liberation Sans:style=Bold";
 PITCH = 8;
 T = 3.2;                // base and wall thickness: one plate
 GROUP = 3 * PITCH;      // a 2-stud group plus a stud's gap
-M = 6;                  // margin at each end
+M = 10;                 // margin at each end: room for the first underside 1 x 2 group
 N = len(sizes);
 L = N * GROUP - PITCH + 2 * M;
 LABEL = 9;              // label strip in front of the top studs
@@ -92,11 +93,13 @@ difference() {
         // underside (mirrored, to read with the strip flipped front to back),
         // and above the groups on both faces of the wall
         translate([x, LABEL / 2, T - 0.6]) linear_extrude(1) label(i);
-        translate([x, LABEL / 2, -1]) linear_extrude(1.6) mirror([0, 1, 0]) label(i);
+        translate([x - PITCH * 3 / 4, LABEL / 2, -1]) linear_extrude(1.6) mirror([0, 1, 0]) label(i);   // under both underside groups
         translate([x, WALL_Y + 0.6, WALL_LABEL_Z]) rotate([90, 0, 0]) linear_extrude(1) label(i);
         translate([x, WALL_Y + T - 0.6, WALL_LABEL_Z]) rotate([90, 0, 180]) linear_extrude(1) label(i);
         // underside: a 2 x 2 socket group under the top studs
         translate([x, LABEL + PITCH, 0]) socket_group(sizes[i]);
+        // ... and a 1 x 2 group with a pin, running front to back in the gap to its left
+        translate([x - 1.5 * PITCH, LABEL + PITCH, 0]) rotate(90) socket_group(sizes[i], 1);
         // wall front face: a 2 x 2 socket group going in (+y) behind the side studs
         translate([x, WALL_Y, GROUP_Z]) rotate([90, 0, 0]) mirror([0, 0, 1]) socket_group(sizes[i]);
         // ... and a 1 x 2 group above it, with a pin
