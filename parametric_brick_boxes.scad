@@ -33,7 +33,7 @@
 //          raised label needs them too; an engraved one doesn't).
 //          Everything else - the 45 deg groove edge, hinge slots, detent
 //          pocket - opens upwards
-//    or print_in_place: one piece, the body upright with the lid standing open
+//    or part = print_in_place: one piece, the body upright with the lid standing open
 //          90 deg on it, nothing to assemble. Gaps of pip_gap separate them:
 //          round the hinge (loose, and with no lead-in the pins are captive)
 //          and under the lid, where the wall tops it stands on are dropped.
@@ -50,19 +50,18 @@
 //  recess, and their tubes and pins as short horizontal pegs.
 //  Print stud_fit_test.scad, then a 6 x 5 box, to tune stud_d / side_stud_d /
 //  socket_d / side_socket_d / lid_clear.
-//  Set row for where the box stands on the shelf, then export with part = print / body / lid.
+//  Set row for where the box stands on the shelf, then export with part = print / print_in_place / body / lid.
 // =====================================================================
 
 // the label's default font, so it renders the same without installing it
 use <fonts/Fredoka.ttf>
 
 /* [Box to print] */
-part = "print";         // [print, body, lid, assembled]
+// print_in_place: body and lid as one piece, the lid standing open at 90 deg - nothing to assemble, but the hinge is loose (it can't come apart)
+part = "print";         // [print, print_in_place, body, lid, assembled]
 // open the lid in previews, degrees
 lid_open = 0;           // [0:5:90]
-// body and lid printed as one piece, the lid standing open at 90 deg: nothing to assemble, but the hinge is loose (it can't come apart)
-print_in_place = false;
-// print in place: the gap left between body and lid, mm
+// print_in_place: the gap left between body and lid, mm
 pip_gap = 0.3;          // [0.2:0.05:0.6]
 
 /* [Box size] */
@@ -169,7 +168,7 @@ DT_V = 2.2;             // ... and the height of that vertical face above the se
 DT_Z = 1.4;             // detent bead centre above the seam, on the post's outer face
 DT_FLAT = 0.6;          // flat on the bead tip
 BEEF = 2;               // lid: solid margin round the hinge slots and the detent pocket
-PIP = print_in_place;
+PIP = part == "print_in_place";
 HCLR = PIP ? max(hinge_clear, pip_gap) : hinge_clear;   // gap round the tabs in their slots
 SOCKET_H = stud_h + 0.2;   // socket depth: a stud seats fully
 SOCKET_CH = 0.4;        // 45 deg chamfer on the socket mouth: lead-in, and room for first-layer squish
