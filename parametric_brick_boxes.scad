@@ -120,8 +120,8 @@ label_size = 8;         // [3:0.5:30]
 label_font = "Liberation Sans:style=Bold";
 // engraved into the top skin (no supports), or raised off it
 label_style = "engraved";   // [engraved, raised]
-// how deep it is engraved, or how far it stands up, mm
-label_depth = 0.6;      // [0.2:0.1:1.6]
+// how deep it is engraved, or how far it stands up, mm; 0 leaves just the stud-free space
+label_depth = 0.6;      // [0:0.1:1.6]
 
 /* [Printing] */
 bed_x = 250;
@@ -445,12 +445,12 @@ module box_lid(fs, H) {
             for (x = cols(fs[0]), y = cols(fs[1]))
                 if (!(deep && y > sy && len([for (tx = tab_xs(fs)) if (abs(x - tx) < sx) tx]) > 0) && !in_label(fs, x, y))
                     translate([x, y, H]) mirror([0, 0, 1]) socket();
-        if (LABEL && !RAISED) translate([0, 0, H - LABEL_D]) linear_extrude(LABEL_D + 1) label2d(fs);
+        if (LABEL && !RAISED && LABEL_D > 0) translate([0, 0, H - LABEL_D]) linear_extrude(LABEL_D + 1) label2d(fs);
     }
     // round the lid band, but not the back of its bottom row, which lands on the wall top at 90 deg
     side_faces(fs, H, seam, H, "studs", seam + PITCH, true);
     if (top == "studs") for (x = cols(fs[0]), y = cols(fs[1])) if (!in_label(fs, x, y)) translate([x, y, H - eps]) stud();
-    if (LABEL && RAISED) translate([0, 0, H - eps]) linear_extrude(LABEL_D) label2d(fs);
+    if (LABEL && RAISED && LABEL_D > 0) translate([0, 0, H - eps]) linear_extrude(LABEL_D) label2d(fs);
 }
 
 body_color = [0.55, 0.56, 0.58];   // mid gray
