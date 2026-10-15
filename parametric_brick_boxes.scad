@@ -6,11 +6,12 @@
 //  real LEGO.
 //    - every dimension is LEGO units: footprints in studs (8 mm pitch,
 //      0.1 mm play per side), heights in stud rows (8 mm)
-//    - studs edge to edge over every side, from the bed up to the seam,
-//      and rows round the lid band (not the back of its bottom row, which
-//      lands on the wall top at 90 deg)
-//    - a flat, hollow lid with studs standing on its top face, so plates press on
-//      and pry off easily (or a plain top, with top_studs off)
+//    - each face - top, bottom, front, back, left, right - is studs,
+//      sockets (holes that take studs) or flat, edge to edge. The walls
+//      run from the bed up to the seam and round the lid band (not the back
+//      of its bottom row, which lands on the wall top at 90 deg)
+//    - a flat, hollow lid, so plates press onto its top studs and pry off
+//      easily
 //    - lid (the top band) over an open storage box, hinged on two tabs at
 //      the back (friction pins, holds any angle up to 90 deg, lifts off at
 //      90 deg)
@@ -22,20 +23,20 @@
 //  Box size is studs_l x studs_w, the whole footprint.
 //
 //  Printing:
-//    body  upright as modelled (open top up). Its bottom studs land on the
-//          bed and need supports (or set bottom_studs off for a flat floor,
-//          no supports)
-//    lid   inverted: top down, open underside up. Its top studs land on
-//          the bed and need supports (or set top_studs off for a flat
-//          top); everything else - the 45 deg
-//          groove edge, hinge slots, detent pocket - opens upwards
+//    body  upright as modelled (open top up). Bottom studs land on the bed
+//          and need supports; with bottom sockets or flat, no supports
+//    lid   inverted: top down, open underside up. Top studs land on the bed
+//          and need supports; with top sockets or flat, no supports.
+//          Everything else - the 45 deg groove edge, hinge slots, detent
+//          pocket - opens upwards
 //  Hinge: the body's tabs print upright with flat-bottomed pins. To fit the
 //  lid, hold it upright (open 90 deg) behind the tabs and slide it forward
 //  onto the pins, then close it. Tune hinge_play for stiffness.
 //  Side studs print as short horizontal pegs, with a small flat shaved off
 //  the side facing down as printed (side_stud_flat) so the worst of the
-//  overhang is gone.
-//  Print stud_fit_test.scad, then a 6 x 5 box, to tune stud_d / side_stud_d / lid_clear.
+//  overhang is gone. Side sockets are teardrops, pointed up as printed.
+//  Print stud_fit_test.scad, then a 6 x 5 box, to tune stud_d / side_stud_d /
+//  socket_d / side_socket_d / lid_clear.
 //  Set row for where the box stands on the shelf, then export with part = print / body / lid.
 // =====================================================================
 
@@ -61,14 +62,13 @@ row = 0;                // [0:1:6]
 corner_r = 1;           // [0:0.25:1.5]
 
 /* [Studs] */
-// studs over the whole top (off = plain)
-top_studs = true;
-// studs over the whole underside, pointing down (off = flat floor)
-bottom_studs = true;
-studs_front = true;
-studs_back = true;
-studs_left = true;
-studs_right = true;
+// each face, edge to edge: studs, sockets (holes that take studs) or flat
+top = "studs";          // [studs, sockets, flat]
+bottom = "studs";       // [studs, sockets, flat]
+front = "studs";        // [studs, sockets, flat]
+back = "studs";         // [studs, sockets, flat]
+left = "studs";         // [studs, sockets, flat]
+right = "studs";        // [studs, sockets, flat]
 // printed stud diameter - tune for clutch (LEGO 4.8)
 stud_d = 4.85;          // [4.6:0.05:5.1]
 stud_h = 1.8;           // [1.2:0.1:2]
@@ -76,15 +76,19 @@ stud_h = 1.8;           // [1.2:0.1:2]
 side_stud_d = 4.85;     // [4.6:0.05:5.1]
 // flat shaved off the underside of wall studs, for a cleaner overhang
 side_stud_flat = 0.4;   // [0:0.1:1]
+// socket diameter in the top and bottom - tune for clutch on the studs you'll press in
+socket_d = 4.9;         // [4.6:0.05:5.3]
+// wall sockets print sideways and size differently - tune separately
+side_socket_d = 4.9;    // [4.6:0.05:5.3]
 
 /* [Box construction] */
 // wall thickness, mm (under 3.2 the lid's seat ridge and the skin over the detent get thin)
 wall = 3.2;             // [2.4:0.4:6]
-// floor thickness (3.2 = 1 plate)
+// floor thickness (3.2 = 1 plate; at least 3.2 under bottom sockets)
 floor_t = 3.2;          // [1.6:0.8:6.4]
 // play between the lid groove and the wall ridge
 lid_clear = 0.2;        // [0:0.05:0.6]
-// lid top skin thickness: under it the lid is hollow, inside the outer lip
+// lid top skin thickness: under it the lid is hollow, inside the outer lip (at least 3.2 under top sockets)
 lid_top = 1.6;          // [1.2:0.4:4]
 
 /* [Lid hinge] */
@@ -131,6 +135,12 @@ DT_V = 2.2;             // ... and the height of that vertical face above the se
 DT_Z = 1.4;             // detent bead centre above the seam, on the post's outer face
 DT_FLAT = 0.6;          // flat on the bead tip
 BEEF = 2;               // lid: solid margin round the hinge slots and the detent pocket
+SOCKET_H = stud_h + 0.2;   // socket depth: a stud seats fully
+SOCKET_CH = 0.4;        // 45 deg chamfer on the socket mouth: lead-in, and room for first-layer squish
+SOCKET_MIN = SOCKET_H + 1.2;   // material a socket needs: its depth and a skin behind it
+SIDES = [front, back, left, right];
+FLOOR = bottom == "sockets" ? max(floor_t, SOCKET_MIN) : floor_t;
+LID_TOP = top == "sockets" ? max(lid_top, SOCKET_MIN) : lid_top;
 eps = 0.01;
 $fn = 40;
 
@@ -160,23 +170,55 @@ module stud_shape(d) {
 module stud() stud_shape(stud_d);
 // wall stud: local -y ends up pointing down, so that is where the flat goes
 // (or +y, up, for the lid, which prints inverted)
-module side_stud(top = false) intersection() {
+module side_stud(lid = false) intersection() {
     stud_shape(side_stud_d);
-    mirror([0, top ? 1 : 0, 0])
+    mirror([0, lid ? 1 : 0, 0])
         translate([-side_stud_d, -side_stud_d / 2 + side_stud_flat, -1]) cube([2 * side_stud_d, 2 * side_stud_d, stud_h + 2]);
 }
 
-// one stud grid over each whole side, body and lid band together, standing
-// straight off the wall. Each part takes the studs between z0 and z1 (the
+// socket cutters, going +z into the face from z = 0, with a chamfered mouth.
+// Top and bottom: round, the roof a short bridge
+module socket() {
+    translate([0, 0, -1]) cylinder(d = socket_d, h = SOCKET_H + 1, $fn = 48);
+    translate([0, 0, -1]) cylinder(d = socket_d + 2 * SOCKET_CH, h = 1 + eps, $fn = 48);
+    cylinder(d1 = socket_d + 2 * SOCKET_CH, d2 = socket_d, h = SOCKET_CH, $fn = 48);
+}
+// walls: a teardrop pointing up as printed, so the hole has no overhang,
+// its tip flattened 0.2 mm past the circle (a short bridge) so it stays
+// clear of the lid's groove. Local +y ends up pointing down (up for the lid,
+// which prints inverted)
+module teardrop(d) intersection() {
+    hull() { circle(d = d, $fn = 48); polygon([[-eps, d / sqrt(2)], [eps, d / sqrt(2)], [0, 0]]); }
+    translate([-d, -d]) square([2 * d, 1.5 * d + 0.2]);
+}
+module side_socket(lid = false) mirror([0, lid ? 0 : 1, 0]) {
+    translate([0, 0, -1]) linear_extrude(SOCKET_H + 1) teardrop(side_socket_d);
+    hull() {
+        translate([0, 0, -1]) linear_extrude(1 + eps) teardrop(side_socket_d + 2 * SOCKET_CH);
+        translate([0, 0, SOCKET_CH]) linear_extrude(eps) teardrop(side_socket_d);
+    }
+}
+
+// one stud grid over each whole side, body and lid band together: studs
+// standing straight off the wall, or sockets going into it - whichever kind
+// the face is set to. Each part takes the positions between z0 and z1 (the
 // back only above back_z0); any that would straddle the seam are left out.
-module side_studs(fs, H, z0, z1, back_z0 = -1, top = false) {
-    L = mm(fs[0]); W = mm(fs[1]); r = side_stud_d / 2;
-    faces = [[studs_front, 0, W / 2, fs[0], z0], [studs_back, 180, W / 2, fs[0], max(z0, back_z0)],
-             [studs_right, 90, L / 2, fs[1], z0], [studs_left, -90, L / 2, fs[1], z0]];
-    for (f = faces) if (f[0]) rotate(f[1]) translate([0, -f[2], 0])
+module side_faces(fs, H, z0, z1, kind, back_z0 = -1, lid = false) {
+    L = mm(fs[0]); W = mm(fs[1]);
+    r = kind == "studs" ? side_stud_d / 2 : side_socket_d / 2 + SOCKET_CH;
+    dl = detent_len * PITCH + 0.6;
+    faces = [[front, 0, W / 2, fs[0], z0], [back, 180, W / 2, fs[0], max(z0, back_z0)],
+             [right, 90, L / 2, fs[1], z0], [left, -90, L / 2, fs[1], z0]];
+    for (f = faces) if (f[0] == kind) rotate(f[1]) translate([0, -f[2], 0])
         for (q = face_pts(f[3] * PITCH, H))
-            let(z = H / 2 + q[1]) if (z - r > f[4] && z + r < z1)
-                translate([q[0], eps, z]) rotate([90, 0, 0]) side_stud(top);
+            let(z = H / 2 + q[1],
+                // lid sockets keep clear of the detent pockets behind the front's bottom row
+                clash = kind == "sockets" && lid && f[1] == 0 && z < z0 + PITCH
+                        && len([for (x = detent_xs(fs)) if (abs(q[0] - x) < dl / 2 + r) x]) > 0)
+            if (z - r > f[4] && z + r < z1 && !clash) {
+                if (kind == "studs") translate([q[0], eps, z]) rotate([90, 0, 0]) side_stud(lid);
+                else translate([q[0], 0, z]) rotate([-90, 0, 0]) side_socket(lid);
+            }
 }
 
 // ---------------------------------------------------------------------
@@ -314,11 +356,12 @@ module detent_cuts(fs, H) let(l = detent_len * PITCH + 0.6, s = H - LID_H)
 //  with the sloped groove edge) is open, except solid blocks round the
 //  hinge slots and the detent pockets.
 // ---------------------------------------------------------------------
-module lid_hollow(fs, H) let(seam = H - LID_H, ins = WALL - TIP,   // the top of the groove slope
+module lid_hollow(fs, H) let(seam = H - LID_H,
+        ins = len([for (s = SIDES) if (s == "sockets") s]) > 0 ? max(WALL - TIP, SOCKET_MIN) : WALL - TIP,   // the top of the groove slope, or room for wall sockets
         hx = TAB_W / 2 + hinge_clear + PIN_L + 0.3 + BEEF, hy = HR + TAB_D + hinge_clear + BEEF,
         dx = (detent_len * PITCH + 0.6) / 2 + BEEF, dy = WALL + lid_clear + detent_bump + 0.3 + BEEF)   // past the pocket
     difference() {
-        translate([0, 0, seam - 1]) linear_extrude(LID_H - lid_top + 1) plan(fs, ins);
+        translate([0, 0, seam - 1]) linear_extrude(LID_H - LID_TOP + 1) plan(fs, ins);
         for (tx = tab_xs(fs)) translate([tx - hx, mm(fs[1]) / 2 - hy, seam - 2]) cube([2 * hx, hy + 1, LID_H + 2]);
         for (x = detent_xs(fs)) translate([x - dx, -mm(fs[1]) / 2 - 1, seam - 2]) cube([2 * dx, dy + 1, LID_H + 2]);
     }
@@ -327,17 +370,24 @@ module box_body(fs, H) {
     seam = H - LID_H;
     difference() {
         union() {
-            linear_extrude(seam) plan(fs);
-            // hinged: no ridge where the lid's back edge swings down past it
-            front_of(fs, mm(fs[1]) / 2 - 2 * HR - 0.5) ridge(fs, seam - eps, RIM, SEAT);
+            difference() {
+                union() {
+                    linear_extrude(seam) plan(fs);
+                    // hinged: no ridge where the lid's back edge swings down past it
+                    front_of(fs, mm(fs[1]) / 2 - 2 * HR - 0.5) ridge(fs, seam - eps, RIM, SEAT);
+                }
+                translate([0, 0, FLOOR]) linear_extrude(seam + SEAT) plan(fs, WALL);
+                detent_trim(fs, H);
+            }
+            side_faces(fs, H, 0, seam, "studs");
+            if (bottom == "studs") for (x = cols(fs[0]), y = cols(fs[1])) translate([x, y, eps]) mirror([0, 0, 1]) stud();
+            hinge_tabs(fs, H);
+            detent_catches(fs, H);
         }
-        translate([0, 0, floor_t]) linear_extrude(seam + SEAT) plan(fs, WALL);
-        detent_trim(fs, H);
+        // last, so nothing inside (the hinge buttresses reach down into the floor) fills them
+        side_faces(fs, H, 0, seam, "sockets");
+        if (bottom == "sockets") for (x = cols(fs[0]), y = cols(fs[1])) translate([x, y, 0]) socket();
     }
-    side_studs(fs, H, 0, seam);
-    if (bottom_studs) for (x = cols(fs[0]), y = cols(fs[1])) translate([x, y, eps]) mirror([0, 0, 1]) stud();
-    hinge_tabs(fs, H);
-    detent_catches(fs, H);
 }
 
 // lid in box coordinates: it sits on the seam, H - LID_H. Its underside has
@@ -357,10 +407,17 @@ module box_lid(fs, H) {
         hinge_cuts(fs, H);
         detent_cuts(fs, H);
         lid_hollow(fs, H);
+        side_faces(fs, H, seam, H, "sockets", seam + PITCH, true);
+        // top sockets, except any that would reach down into a hinge slot
+        if (top == "sockets") let(a = hinge_axis(fs, H), deep = H - SOCKET_H - 0.4 < a[1] + TAB_R + hinge_clear,
+                                  sx = TAB_W / 2 + hinge_clear + socket_d / 2 + 0.4, sy = a[0] - TAB_R - hinge_clear - socket_d / 2 - 0.4)
+            for (x = cols(fs[0]), y = cols(fs[1]))
+                if (!(deep && y > sy && len([for (tx = tab_xs(fs)) if (abs(x - tx) < sx) tx]) > 0))
+                    translate([x, y, H]) mirror([0, 0, 1]) socket();
     }
     // round the lid band, but not the back of its bottom row, which lands on the wall top at 90 deg
-    side_studs(fs, H, seam, H, seam + PITCH, true);
-    if (top_studs) for (x = cols(fs[0]), y = cols(fs[1])) translate([x, y, H - eps]) stud();
+    side_faces(fs, H, seam, H, "studs", seam + PITCH, true);
+    if (top == "studs") for (x = cols(fs[0]), y = cols(fs[1])) translate([x, y, H - eps]) stud();
 }
 
 body_color = [0.55, 0.56, 0.58];   // mid gray
@@ -378,16 +435,20 @@ echo(str("\n==== Parametric brick box ====",
     "\n  size     ", FS[0], " x ", FS[1], " studs (", round(mm(FS[0])), " x ", round(mm(FS[1])), " mm), ",
                      BH / PLATE, " plates (", BH, " mm) tall",
     "\n  row      ", row, ": side_rows ", side_rows, row > 0 ? str(" + ", row, " x rise ", rise) : "", " = ", ROWS, " stud rows, the top ", LID_ROWS, " on the lid\n"));
-if (max(mm(FS[0]), mm(FS[1])) > max(bed_x, bed_y) || min(mm(FS[0]), mm(FS[1])) > min(bed_x, bed_y) || BH + (bottom_studs ? stud_h : 0) + (top_studs ? stud_h : 0) > bed_z)
+if (max(mm(FS[0]), mm(FS[1])) > max(bed_x, bed_y) || min(mm(FS[0]), mm(FS[1])) > min(bed_x, bed_y) || BH + (bottom == "studs" ? stud_h : 0) + (top == "studs" ? stud_h : 0) > bed_z)
     echo("WARNING: the box is too big for the printer bed");
 if (WALL < 3.2) echo(str("NOTE: ", WALL, " mm walls leave a ", SEAT, " mm seat ridge and ", DT_U - lid_clear - detent_bump - 0.1, " mm of lid skin over the detent"));
+if (WALL < SOCKET_MIN && len([for (s = SIDES) if (s == "sockets") s]) > 0)
+    echo(str("WARNING: ", WALL, " mm walls leave only ", WALL - SOCKET_H, " mm behind the wall sockets - use ", SOCKET_MIN, " or more"));
+if (FLOOR > floor_t) echo(str("NOTE: floor thickened to ", FLOOR, " mm for the bottom sockets"));
+if (LID_TOP > lid_top) echo(str("NOTE: lid top thickened to ", LID_TOP, " mm for the top sockets"));
 if (tab_xs(FS)[1] < TAB_W / 2 + hinge_clear + PIN_L + 2)
     echo(str("WARNING: the box is too short for hinge tabs ", hinge_from_end, " studs from each end - lower hinge_from_end"));
 
-BODY_TIP = bottom_studs ? stud_h - eps : 0;   // body printed upright: its bottom studs reach the bed
-LID_TIP = top_studs ? stud_h - eps : 0;   // lid printed inverted: its top studs reach the bed
-module body_print() translate([0, 0, BODY_TIP]) box_body(FS, BH);
-module lid_print() translate([0, 0, BH + LID_TIP]) rotate([180, 0, 0]) box_lid(FS, BH);
+BODY_TIP = bottom == "studs" ? stud_h - eps : 0;   // body printed upright: its bottom studs reach the bed
+LID_TIP = top == "studs" ? stud_h - eps : 0;   // lid printed inverted: its top studs reach the bed
+module body_print() translate([0, 0, BODY_TIP]) render() box_body(FS, BH);
+module lid_print() translate([0, 0, BH + LID_TIP]) rotate([180, 0, 0]) render() box_lid(FS, BH);
 if (part == "assembled") box();
 else if (part == "body") color(body_color) body_print();
 else if (part == "lid") color(lid_color) lid_print();

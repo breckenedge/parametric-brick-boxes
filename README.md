@@ -1,8 +1,8 @@
 # Parametric brick boxes
 
 Printable, parametric storage boxes, LEGO-compatible and written in OpenSCAD:
-studded edge to edge on every side and on the lid (each face can be switched off),
-with storage inside.
+studded edge to edge on every side and on the lid (each face can be studs, sockets
+or flat), with storage inside.
 
 ![A 21 x 12 stud box with its hinged lid open](images/open.png)
 
@@ -18,22 +18,24 @@ with storage inside.
   studs of neighbouring boxes line up. `side_rows` sets the height and `lid_rows` how
   many of those rows are lid. A lid taller than one row swings out behind the box by
   8 mm per extra row when it's open.
-- Turn any face's studs off in the Customizer's **Studs** group: `top_studs` for the lid
-  top, `bottom_studs` for the underside, `studs_front`, `studs_back`, `studs_left` and `studs_right` for the walls. A plain
-  face is flat, ready for a label, or to stand flush against a wall or another box.
+- Every face (`top`, `bottom`, `front`, `back`, `left`, `right`) is set to `studs`,
+  `sockets` or `flat` in the Customizer's **Studs** group. Sockets are holes that take
+  studs, so a box presses onto a baseplate or onto another box's studs. Flat faces take
+  a label, or stand flush against a wall or another box.
 - Set `row` for where the box will stand (0 = front): each row back is taller, so
   whatever stands on the boxes in back sits higher.
 - Hinged lid on two pinned tabs at the back: friction holds it at any angle up to 90°,
   and it lifts off at 90°.
-- Hollow lid: a thin studded top skin (`lid_top`) over an open underside, inside the
-  outer lip, with solid blocks only round the hinge slots and the detent.
+- Hollow lid: a thin top skin (`lid_top`, thickened automatically under top sockets) over
+  an open underside, inside the outer lip, with solid blocks only round the hinge slots
+  and the detent.
 - Snaps shut on a detent: a bead on the front wall top clicks into the lid; squeeze the
   middle of the box front to release it (`detent_count`, `detent_len`; `detent_bump` sets
   how firm the snap is).
-- Both parts print standing on their studs, on supports: the body upright on its bottom
-  studs, the lid inverted (top down) on its top studs. With `bottom_studs` or `top_studs`
-  off, that part prints flat without supports. Print `stud_fit_test.scad` first to find your stud sizes, then
-  a small 6 x 5 box to check the whole fit.
+- The body prints upright and the lid inverted (top down). A part standing on studs
+  (bottom studs for the body, top studs for the lid) needs supports. With `sockets` or
+  `flat` there, it prints flat without supports. Print `stud_fit_test.scad` first to
+  find your stud and socket sizes, then a small 6 x 5 box to check the whole fit.
   For reference, on the author's Bambu Lab A1 printing SUNLU PLA 2.0+,
   `stud_d = 5.05` (top) and `side_stud_d = 5.00` (sides) clutch well.
 
