@@ -14,8 +14,10 @@ with storage inside.
 
 - Everything is in LEGO units: footprints in studs (8 mm), heights in stud rows (8 mm).
 - Box size is set directly in studs (`studs_l` x `studs_w`).
-- Every box is whole stud rows tall, with a row of studs round the lid band too, so the
-  side studs of neighbouring boxes line up.
+- Every box is whole stud rows tall, with studs round the lid band too, so the side
+  studs of neighbouring boxes line up. `side_rows` sets the height and `lid_rows` how
+  many of those rows are lid. A lid taller than one row swings out behind the box by
+  8 mm per extra row when it's open.
 - Turn any face's studs off in the Customizer's **Studs** group: `top_studs` for the lid
   top, `studs_front`, `studs_back`, `studs_left` and `studs_right` for the walls. A plain
   face is flat, ready for a label, or to stand flush against a wall or another box.

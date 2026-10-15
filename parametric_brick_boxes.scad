@@ -7,7 +7,7 @@
 //    - every dimension is LEGO units: footprints in studs (8 mm pitch,
 //      0.1 mm play per side), heights in stud rows (8 mm)
 //    - studs edge to edge over every side, from the bed up to the seam,
-//      and a row round the lid band (not its back, which lands on the wall
+//      and rows round the lid band (not its back, which lands on the wall
 //      top at 90 deg)
 //    - a flat, hollow lid with studs standing on its top face, so plates press on
 //      and pry off easily (or a plain top, with top_studs off)
@@ -16,8 +16,8 @@
 //      90 deg)
 //
 //  Box height is set in side stud rows: side_rows, counting the lid band's
-//  row, plus rise for each shelf row back (see row). Every box is whole stud
-//  rows tall, so the side studs of neighbouring boxes line up.
+//  lid_rows, plus rise for each shelf row back (see row). Every box is whole
+//  stud rows tall, so the side studs of neighbouring boxes line up.
 //
 //  Box size is studs_l x studs_w, the whole footprint.
 //
@@ -50,6 +50,8 @@ studs_l = 21;           // [5:1:40]
 studs_w = 12;           // [5:1:30]
 // stud rows on the sides of a front-row box, the lid band's included - sets the box height
 side_rows = 2;          // [2:1:30]
+// stud rows on the lid band, out of side_rows (the body keeps at least one)
+lid_rows = 1;           // [1:1:10]
 // extra stud rows for each row further back
 rise = 6;               // [0:1:12]
 // shelf row the box is for, 0 = front: each row back is rise stud rows taller, so whatever stands on the boxes in back sits higher
@@ -109,12 +111,13 @@ bed_z = 250;
 PITCH = 8;              // stud pitch, and the height of a side stud row
 PLATE = 3.2;            // plate height (brick = 3 plates)
 PLAY = 0.1;             // LEGO play per side: n studs = n * 8 - 0.2 mm
-LID_H = PITCH;          // lid band: one row of side studs
+LID_ROWS = max(1, round(lid_rows));
+LID_H = LID_ROWS * PITCH;   // lid band: lid_rows rows of side studs
 WALL = wall;
 RIM = 1.2;              // flat lid rim on the wall top, outside the seat
 TIP = 0.8;              // flat on the inner edge of the seat ridge
 SEAT = max(0.4, WALL - RIM - TIP);   // height of the 45 deg seat ridge above the seam
-HR = LID_H / 2;         // hinge axis: mid-height of the lid band, HR in from the back face
+HR = PITCH / 2;         // hinge axis: HR above the seam (mid-height of the lid band's bottom row), HR in from the back face
 TAB_R = 2;              // hinge tab head radius
 TAB_W = 6;              // tab thickness along the axis
 TAB_D = 6;              // tab stem depth in front of the axis: a solid block, buttressed down the inside of the back wall
@@ -134,8 +137,8 @@ function mm(n) = n * PITCH - 2 * PLAY;
 //  Size
 // ---------------------------------------------------------------------
 FS = [max(5, round(studs_l)), max(5, round(studs_w))];   // footprint, studs
-ROWS = max(2, round(side_rows)) + row * rise;   // side stud rows, the lid band's included
-BH = ROWS * PITCH;                              // box height, mm
+ROWS = max(LID_ROWS + 1, round(side_rows)) + row * rise;   // side stud rows, the lid band's included
+BH = ROWS * PITCH;                                         // box height, mm
 
 // ---------------------------------------------------------------------
 //  Studs
@@ -174,7 +177,7 @@ module side_studs(fs, H, z0, z1, back = true, top = false) {
 }
 
 // ---------------------------------------------------------------------
-//  Box: body + lid, split one stud row below the top
+//  Box: body + lid, split lid_rows stud rows below the top
 // ---------------------------------------------------------------------
 module plan(fs, ins = 0) let(r = max(corner_r - ins, 0.5))
     offset(r = r) square([mm(fs[0]) - 2 * ins - 2 * r, mm(fs[1]) - 2 * ins - 2 * r], center = true);
@@ -192,13 +195,13 @@ module front_of(fs, y) intersection() {
 
 // ---------------------------------------------------------------------
 //  Hinge: two tabs on the back wall, pinned into slots in the lid.
-//  The axis runs along x at mid-height of the lid band, HR in from the back
+//  The axis runs along x HR above the seam, HR in from the back
 //  face. The lid's lower back edge is rounded about it, so as the lid opens
 //  nothing behind the axis ever drops below the seam, and everything in
 //  front of it rises. At 90 deg the lid's back face lands on the wall top:
 //  that is the stop. Hinge coordinates: u = towards the back, v = up.
 // ---------------------------------------------------------------------
-function hinge_axis(fs, H) = [mm(fs[1]) / 2 - HR, H - HR];      // [y, z]
+function hinge_axis(fs, H) = [mm(fs[1]) / 2 - HR, H - LID_H + HR];   // [y, z]
 function tab_xs(fs) = [for (s = [-1, 1]) s * (mm(fs[0]) / 2 - hinge_from_end * PITCH)];
 
 // a 2D (u, v) profile around the hinge axis, extruded along x from x0 to x1
@@ -370,7 +373,7 @@ module box() {
 echo(str("\n==== Parametric brick box ====",
     "\n  size     ", FS[0], " x ", FS[1], " studs (", round(mm(FS[0])), " x ", round(mm(FS[1])), " mm), ",
                      BH / PLATE, " plates (", BH, " mm) tall",
-    "\n  row      ", row, ": side_rows ", side_rows, row > 0 ? str(" + ", row, " x rise ", rise) : "", " = ", ROWS, " stud rows, the top one on the lid\n"));
+    "\n  row      ", row, ": side_rows ", side_rows, row > 0 ? str(" + ", row, " x rise ", rise) : "", " = ", ROWS, " stud rows, the top ", LID_ROWS, " on the lid\n"));
 if (max(mm(FS[0]), mm(FS[1])) > max(bed_x, bed_y) || min(mm(FS[0]), mm(FS[1])) > min(bed_x, bed_y) || BH > bed_z)
     echo("WARNING: the box is too big for the printer bed");
 if (WALL < 3.2) echo(str("NOTE: ", WALL, " mm walls leave a ", SEAT, " mm seat ridge and ", DT_U - lid_clear - detent_bump - 0.1, " mm of lid skin over the detent"));
