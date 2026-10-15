@@ -30,7 +30,7 @@ or flat), with storage inside.
   in any installed font (`label_font`), and can lean into italics (`label_slant`).
 - Set `row` for where the box will stand (0 = front): each row back is taller, so
   whatever stands on the boxes in back sits higher.
-- Hinged lid on two pinned tabs at the back: friction holds it at any angle up to 90°,
+- Hinged lid on two pinned tabs at the back. On a two-piece box, friction holds it at any angle up to 90°,
   and it lifts off at 90°.
 - Hollow lid: a thin top skin (`lid_top`, thickened automatically under top sockets) over
   an open underside, inside the outer lip, with solid blocks only round the hinge slots
@@ -38,13 +38,14 @@ or flat), with storage inside.
 - Snaps shut on a detent: a bead on the front wall top clicks into the lid; squeeze the
   middle of the box front to release it (`detent_count`, `detent_len`; `detent_bump` sets
   how firm the snap is).
-- The body prints upright and the lid inverted (top down). A part standing on studs
-  (bottom studs for the body, top studs for the lid) needs supports. With `sockets` or
-  `flat` there, it prints flat without supports. Print `stud_fit_test.scad` first to
-  find your stud and socket sizes, then a small 6 x 5 box to check the whole fit.
-  Or pick `part = print_in_place` to print it all as one piece, with the lid standing open
-  on the body: no assembly, at the cost of a loose hinge in place of the friction one
-  (`pip_gap` sets the clearance between the parts).
+- By default (`part = print_in_place`) it prints as one piece, the body upright with the
+  lid standing open on it: no assembly, and the hinge can't come apart (`pip_gap` sets
+  the clearance between the parts). Or pick `part = print` for two pieces, the body
+  upright and the lid inverted (top down), on a snug friction hinge you assemble. A part
+  standing on studs (bottom studs for the body, top studs for a two-piece lid) needs
+  supports. With `sockets` or `flat` there, it prints flat without supports. Print
+  `stud_fit_test.scad` first to find your stud and socket sizes, then a small 6 x 5 box
+  to check the whole fit.
   For reference, on the author's Bambu Lab A1 printing
   [SUNLU PLA 2.0+](https://www.breckenridge.dev/amazon.html?asin=B0FG7VTXTY) (affiliate link), these clutch
   well: `stud_d` (top studs) 5.05, `side_stud_d` (side studs) 4.95–5.00,
@@ -52,9 +53,9 @@ or flat), with storage inside.
   4.85–4.95.
 - `3mf/` has ready-to-print Bambu Studio projects for the A1 (0.4 mm nozzle, SUNLU PLA+
   2.0, 0.20mm Standard, textured PEI plate) at 6 x 5, 8 x 8, 16 x 8 and 22 x 8 studs,
-  3 rows tall, with the default faces (studs on the top and front, sockets on the
-  bottom and back, flat sides). Each size comes two-piece (`brick_box_<size>.3mf`, supports on for the
-  lid's studs) and in one piece (`brick_box_<size>_print_in_place.3mf`). They use
+  3 rows tall, printed in place (`brick_box_<size>_print_in_place.3mf`, no supports),
+  with the default faces (studs on the top and front, sockets on the bottom and back,
+  flat sides). They use
   `stud_d` 5.05, `side_stud_d` 5.00, `socket_d` 4.95 and `side_socket_d` 4.90; on
   another printer or filament, print the fit test and make your own.
 
@@ -62,7 +63,7 @@ or flat), with storage inside.
 
 Open `parametric_brick_boxes.scad` in OpenSCAD (a recent nightly with the
 Manifold backend renders much faster) and use the Customizer. Set the size and `row`,
-pick `part = print / print_in_place / body / lid / assembled`, then render and export.
+pick `part = print_in_place / print / body / lid / assembled`, then render and export.
 
 `archive/` holds an earlier, decorative pillar version.
 

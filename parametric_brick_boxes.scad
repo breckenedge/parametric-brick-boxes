@@ -25,7 +25,7 @@
 //
 //  Box size is studs_l x studs_w, the whole footprint.
 //
-//  Printing:
+//  Printing (part = print_in_place, the default, or part = print for two pieces):
 //    body  upright as modelled (open top up). Bottom studs land on the bed
 //          and need supports; with bottom sockets or flat, no supports
 //    lid   inverted: top down, open underside up. Top studs land on the bed
@@ -33,7 +33,7 @@
 //          raised label needs them too; an engraved one doesn't).
 //          Everything else - the 45 deg groove edge, hinge slots, detent
 //          pocket - opens upwards
-//    or part = print_in_place: one piece, the body upright with the lid standing open
+//    print_in_place: one piece, the body upright with the lid standing open
 //          90 deg on it, nothing to assemble. Gaps of pip_gap separate them:
 //          round the hinge (loose, and with no lead-in the pins are captive)
 //          and under the lid, where the wall tops it stands on are dropped.
@@ -54,15 +54,15 @@
 //  recess, and their tubes and pins as short horizontal pegs.
 //  Print stud_fit_test.scad, then a 6 x 5 box, to tune stud_d / side_stud_d /
 //  socket_d / side_socket_d / lid_clear.
-//  Set row for where the box stands on the shelf, then export with part = print / print_in_place / body / lid.
+//  Set row for where the box stands on the shelf, then export with part = print_in_place / print / body / lid.
 // =====================================================================
 
 // the label's default font, so it renders the same without installing it
 use <fonts/Fredoka.ttf>
 
 /* [Box to print] */
-// print_in_place: body and lid as one piece, the lid standing open at 90 deg - nothing to assemble, but the hinge is loose (it can't come apart)
-part = "print";         // [print, print_in_place, body, lid, assembled]
+// print_in_place: body and lid as one piece, the lid standing open at 90 deg - nothing to assemble, and the hinge can't come apart. print: body and lid side by side, to assemble
+part = "print_in_place"; // [print_in_place, print, body, lid, assembled]
 // open the lid in previews, degrees
 lid_open = 0;           // [0:5:90]
 // print_in_place: the gap left between body and lid, mm
