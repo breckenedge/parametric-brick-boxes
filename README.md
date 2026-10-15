@@ -57,5 +57,9 @@ pick `part = print / body / lid / assembled`, then render and export.
 [Creative Commons Attribution-ShareAlike 4.0 International](https://creativecommons.org/licenses/by-sa/4.0/)
 (CC BY-SA 4.0); see [LICENSE](LICENSE).
 
+The label's default font, [Fredoka](https://fonts.google.com/specimen/Fredoka)
+(`fonts/Fredoka.ttf`), is © The Fredoka Project Authors, under the
+[SIL Open Font License 1.1](fonts/OFL.txt).
+
 LEGO® is a trademark of the LEGO Group, which does not sponsor, authorize or endorse
 this project.

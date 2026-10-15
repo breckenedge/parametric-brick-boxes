@@ -43,6 +43,9 @@
 //  Set row for where the box stands on the shelf, then export with part = print / body / lid.
 // =====================================================================
 
+// the label's default font, so it renders the same without installing it
+use <fonts/Fredoka.ttf>
+
 /* [Box to print] */
 part = "print";         // [print, body, lid, assembled]
 // open the lid in previews, degrees
@@ -114,12 +117,13 @@ detent_bump = 0.3;      // [0.1:0.05:0.6]
 
 /* [Lid label] */
 // text on the lid top, reading from the front; empty for none
-label = "";
+label = "bricks";
 // text height, mm
 label_size = 8;         // [3:0.5:30]
-label_font = "Liberation Sans:style=Bold";
+// any installed font; Fredoka comes with these files (fonts/)
+label_font = "Fredoka:style=Bold";   // font
 // lean the letters forward, degrees: italics for any font
-label_slant = 0;        // [0:1:30]
+label_slant = 10;       // [0:1:30]
 // engraved into the top skin (no supports), or raised off it
 label_style = "engraved";   // [engraved, raised]
 // how deep it is engraved, or how far it stands up, mm; 0 leaves just the stud-free space
