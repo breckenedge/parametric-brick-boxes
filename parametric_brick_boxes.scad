@@ -47,9 +47,9 @@ lid_open = 0;           // [0:5:90]
 
 /* [Box size] */
 // box length, left to right, studs (the whole footprint)
-studs_l = 21;           // [5:1:40]
+studs_l = 21;           // [4:1:40]
 // box width, front to back, studs
-studs_w = 12;           // [5:1:30]
+studs_w = 12;           // [4:1:30]
 // stud rows on the sides of a front-row box, the lid band's included - sets the box height
 side_rows = 2;          // [2:1:30]
 // stud rows on the lid band, out of side_rows (the body keeps at least one)
@@ -149,7 +149,7 @@ function mm(n) = n * PITCH - 2 * PLAY;
 // ---------------------------------------------------------------------
 //  Size
 // ---------------------------------------------------------------------
-FS = [max(5, round(studs_l)), max(5, round(studs_w))];   // footprint, studs
+FS = [max(4, round(studs_l)), max(4, round(studs_w))];   // footprint, studs
 ROWS = max(LID_ROWS + 1, round(side_rows)) + row * rise;   // side stud rows, the lid band's included
 BH = ROWS * PITCH;                                         // box height, mm
 
@@ -444,6 +444,9 @@ if (FLOOR > floor_t) echo(str("NOTE: floor thickened to ", FLOOR, " mm for the b
 if (LID_TOP > lid_top) echo(str("NOTE: lid top thickened to ", LID_TOP, " mm for the top sockets"));
 if (tab_xs(FS)[1] < TAB_W / 2 + hinge_clear + PIN_L + 2)
     echo(str("WARNING: the box is too short for hinge tabs ", hinge_from_end, " studs from each end - lower hinge_from_end"));
+if (let(l = detent_len * PITCH + 0.6, xs = detent_xs(FS))   // each detent inside the end walls, and two clear of each other
+        detent_count > 0 && (abs(xs[0]) + l / 2 > mm(FS[0]) / 2 - WALL || (detent_count == 2 && xs[1] - l / 2 < 0)))
+    echo(str("WARNING: ", detent_count, " detent", detent_count == 2 ? "s" : "", " ", detent_len, " studs long don't fit along the front - lower detent_len or detent_count"));
 
 BODY_TIP = bottom == "studs" ? stud_h - eps : 0;   // body printed upright: its bottom studs reach the bed
 LID_TIP = top == "studs" ? stud_h - eps : 0;   // lid printed inverted: its top studs reach the bed
