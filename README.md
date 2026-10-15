@@ -22,9 +22,8 @@ or flat), with storage inside.
   `sockets` or `flat` in the Customizer's **Studs** group. Sockets are holes that take
   studs, so a box presses onto a baseplate or onto another box's studs. Flat faces take
   a label, or stand flush against a wall or another box.
-- Optional text label on the lid top (**Lid label** group): set `label`, and the top
-  studs or sockets are left out of a `label_l` x `label_w` stud window centred on the
-  lid. The text is engraved into the top skin (prints without supports) or raised off it
+- Optional text label on the lid top (**Lid label** group): set `label`, and it's
+  centred on the lid with the top studs or sockets round it left out. The text is engraved into the top skin (prints without supports) or raised off it
   (`label_style`), in any installed font (`label_font`).
 - Set `row` for where the box will stand (0 = front): each row back is taller, so
   whatever stands on the boxes in back sits higher.

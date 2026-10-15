@@ -12,8 +12,8 @@
 //      of its bottom row, which lands on the wall top at 90 deg)
 //    - a flat, hollow lid, so plates press onto its top studs and pry off
 //      easily
-//    - an optional text label on the lid top, engraved or raised, in a
-//      window cleared of top studs (label, label_l x label_w studs)
+//    - an optional text label on the lid top, engraved or raised, with the
+//      top studs round it left out
 //    - lid (the top band) over an open storage box, hinged on two tabs at
 //      the back (friction pins, holds any angle up to 90 deg, lifts off at
 //      90 deg)
@@ -115,9 +115,6 @@ detent_bump = 0.3;      // [0.1:0.05:0.6]
 /* [Lid label] */
 // text on the lid top, reading from the front; empty for none
 label = "";
-// the label's window, centred on the top, in studs: no top studs or sockets inside it
-label_l = 8;            // [1:1:40]
-label_w = 2;            // [1:1:30]
 // text height, mm
 label_size = 8;         // [3:0.5:30]
 label_font = "Liberation Sans:style=Bold";
@@ -171,23 +168,21 @@ ROWS = max(LID_ROWS + 1, round(side_rows)) + row * rise;   // side stud rows, th
 BH = ROWS * PITCH;                                         // box height, mm
 
 // ---------------------------------------------------------------------
-//  Lid label: text in a window of whole stud columns and rows, centred
-//  on the top (half a stud off centre when its size and the box's differ
-//  in parity), with the top studs or sockets left out inside it
+//  Lid label: text centred on the top, with every top stud or socket
+//  that would come within LABEL_GAP of the text's outline left out
 // ---------------------------------------------------------------------
 LABEL = label != "";
 RAISED = label_style == "raised";
 LABEL_D = RAISED ? label_depth : min(label_depth, LID_TOP - 0.4);   // engraved: keep 0.4 mm of skin under it
 TOP_TIP = max(top == "studs" ? stud_h : 0, LABEL && RAISED ? LABEL_D : 0);   // how far anything stands up off the lid top
-// the window's [low, high] edges along an n-stud side, l studs of it
-function label_span(n, l) = let(l = min(max(1, round(l)), n), i0 = floor((n - l) / 2))
-    [(i0 - n / 2) * PITCH, (i0 + l - n / 2) * PITCH];
-function label_win(fs) = [label_span(fs[0], label_l), label_span(fs[1], label_w)];
-function in_label(fs, x, y) = let(w = label_win(fs))
-    LABEL && x > w[0][0] && x < w[0][1] && y > w[1][0] && y < w[1][1];
-module label2d(fs) let(w = label_win(fs))
-    translate([(w[0][0] + w[0][1]) / 2, (w[1][0] + w[1][1]) / 2])
-        text(label, size = label_size, font = label_font, halign = "center", valign = "center");
+LABEL_GAP = 1;          // clear space round the text
+// the text's bounding box, [[x0, y0], [x1, y1]]. OpenSCAD without textmetrics() gets an estimate
+LABEL_TM = LABEL ? textmetrics(text = label, size = label_size, font = label_font, halign = "center", valign = "center") : undef;
+LABEL_BOX = is_undef(LABEL_TM) ? let(w = len(label) * label_size * 0.7) [[-w / 2, -label_size / 2], [w / 2, label_size / 2]]
+                               : [LABEL_TM.position, LABEL_TM.position + LABEL_TM.size];
+function in_label(fs, x, y) = let(r = (top == "sockets" ? socket_d / 2 + SOCKET_CH : stud_d / 2) + LABEL_GAP)
+    LABEL && x > LABEL_BOX[0][0] - r && x < LABEL_BOX[1][0] + r && y > LABEL_BOX[0][1] - r && y < LABEL_BOX[1][1] + r;
+module label2d(fs) text(label, size = label_size, font = label_font, halign = "center", valign = "center");
 
 // ---------------------------------------------------------------------
 //  Studs
@@ -480,6 +475,8 @@ if (WALL < SOCKET_MIN && len([for (s = SIDES) if (s == "sockets") s]) > 0)
     echo(str("WARNING: ", WALL, " mm walls leave only ", WALL - SOCKET_H, " mm behind the wall sockets - use ", SOCKET_MIN, " or more"));
 if (FLOOR > floor_t) echo(str("NOTE: floor thickened to ", FLOOR, " mm for the bottom sockets"));
 if (LID_TOP > lid_top) echo(str("NOTE: lid top thickened to ", LID_TOP, " mm for the top sockets"));
+if (LABEL && (LABEL_BOX[1][0] - LABEL_BOX[0][0] > mm(FS[0]) - 2 * WALL || LABEL_BOX[1][1] - LABEL_BOX[0][1] > mm(FS[1]) - 2 * WALL))
+    echo(str("WARNING: the label runs off the lid top - lower label_size or shorten the text"));
 if (LABEL && LABEL_D < label_depth) echo(str("NOTE: label engraved ", LABEL_D, " mm deep, to leave 0.4 mm of the ", LID_TOP, " mm lid top under it - raise lid_top for deeper"));
 if (tab_xs(FS)[1] < TAB_W / 2 + hinge_clear + PIN_L + 2)
     echo(str("WARNING: the box is too short for hinge tabs ", hinge_from_end, " studs from each end - lower hinge_from_end"));
