@@ -12,6 +12,8 @@
 //      of its bottom row, which lands on the wall top at 90 deg)
 //    - a flat, hollow lid, so plates press onto its top studs and pry off
 //      easily
+//    - an optional text label on the lid top, engraved or raised, in a
+//      window cleared of top studs (label, label_l x label_w studs)
 //    - lid (the top band) over an open storage box, hinged on two tabs at
 //      the back (friction pins, holds any angle up to 90 deg, lifts off at
 //      90 deg)
@@ -26,7 +28,8 @@
 //    body  upright as modelled (open top up). Bottom studs land on the bed
 //          and need supports; with bottom sockets or flat, no supports
 //    lid   inverted: top down, open underside up. Top studs land on the bed
-//          and need supports; with top sockets or flat, no supports.
+//          and need supports; with top sockets or flat, no supports (a
+//          raised label needs them too; an engraved one doesn't).
 //          Everything else - the 45 deg groove edge, hinge slots, detent
 //          pocket - opens upwards
 //  Hinge: the body's tabs print upright with flat-bottomed pins. To fit the
@@ -109,6 +112,20 @@ detent_len = 2;         // [1:1:6]
 // how far the front wall has to bow in to let the lid go - more = firmer snap, harder squeeze
 detent_bump = 0.3;      // [0.1:0.05:0.6]
 
+/* [Lid label] */
+// text on the lid top, reading from the front; empty for none
+label = "";
+// the label's window, centred on the top, in studs: no top studs or sockets inside it
+label_l = 8;            // [1:1:40]
+label_w = 2;            // [1:1:30]
+// text height, mm
+label_size = 8;         // [3:0.5:30]
+label_font = "Liberation Sans:style=Bold";
+// engraved into the top skin (no supports), or raised off it
+label_style = "engraved";   // [engraved, raised]
+// how deep it is engraved, or how far it stands up, mm
+label_depth = 0.6;      // [0.2:0.1:1.6]
+
 /* [Printing] */
 bed_x = 250;
 bed_y = 250;
@@ -152,6 +169,25 @@ function mm(n) = n * PITCH - 2 * PLAY;
 FS = [max(4, round(studs_l)), max(4, round(studs_w))];   // footprint, studs
 ROWS = max(LID_ROWS + 1, round(side_rows)) + row * rise;   // side stud rows, the lid band's included
 BH = ROWS * PITCH;                                         // box height, mm
+
+// ---------------------------------------------------------------------
+//  Lid label: text in a window of whole stud columns and rows, centred
+//  on the top (half a stud off centre when its size and the box's differ
+//  in parity), with the top studs or sockets left out inside it
+// ---------------------------------------------------------------------
+LABEL = label != "";
+RAISED = label_style == "raised";
+LABEL_D = RAISED ? label_depth : min(label_depth, LID_TOP - 0.4);   // engraved: keep 0.4 mm of skin under it
+TOP_TIP = max(top == "studs" ? stud_h : 0, LABEL && RAISED ? LABEL_D : 0);   // how far anything stands up off the lid top
+// the window's [low, high] edges along an n-stud side, l studs of it
+function label_span(n, l) = let(l = min(max(1, round(l)), n), i0 = floor((n - l) / 2))
+    [(i0 - n / 2) * PITCH, (i0 + l - n / 2) * PITCH];
+function label_win(fs) = [label_span(fs[0], label_l), label_span(fs[1], label_w)];
+function in_label(fs, x, y) = let(w = label_win(fs))
+    LABEL && x > w[0][0] && x < w[0][1] && y > w[1][0] && y < w[1][1];
+module label2d(fs) let(w = label_win(fs))
+    translate([(w[0][0] + w[0][1]) / 2, (w[1][0] + w[1][1]) / 2])
+        text(label, size = label_size, font = label_font, halign = "center", valign = "center");
 
 // ---------------------------------------------------------------------
 //  Studs
@@ -412,12 +448,14 @@ module box_lid(fs, H) {
         if (top == "sockets") let(a = hinge_axis(fs, H), deep = H - SOCKET_H - 0.4 < a[1] + TAB_R + hinge_clear,
                                   sx = TAB_W / 2 + hinge_clear + socket_d / 2 + 0.4, sy = a[0] - TAB_R - hinge_clear - socket_d / 2 - 0.4)
             for (x = cols(fs[0]), y = cols(fs[1]))
-                if (!(deep && y > sy && len([for (tx = tab_xs(fs)) if (abs(x - tx) < sx) tx]) > 0))
+                if (!(deep && y > sy && len([for (tx = tab_xs(fs)) if (abs(x - tx) < sx) tx]) > 0) && !in_label(fs, x, y))
                     translate([x, y, H]) mirror([0, 0, 1]) socket();
+        if (LABEL && !RAISED) translate([0, 0, H - LABEL_D]) linear_extrude(LABEL_D + 1) label2d(fs);
     }
     // round the lid band, but not the back of its bottom row, which lands on the wall top at 90 deg
     side_faces(fs, H, seam, H, "studs", seam + PITCH, true);
-    if (top == "studs") for (x = cols(fs[0]), y = cols(fs[1])) translate([x, y, H - eps]) stud();
+    if (top == "studs") for (x = cols(fs[0]), y = cols(fs[1])) if (!in_label(fs, x, y)) translate([x, y, H - eps]) stud();
+    if (LABEL && RAISED) translate([0, 0, H - eps]) linear_extrude(LABEL_D) label2d(fs);
 }
 
 body_color = [0.55, 0.56, 0.58];   // mid gray
@@ -435,13 +473,14 @@ echo(str("\n==== Parametric brick box ====",
     "\n  size     ", FS[0], " x ", FS[1], " studs (", round(mm(FS[0])), " x ", round(mm(FS[1])), " mm), ",
                      BH / PLATE, " plates (", BH, " mm) tall",
     "\n  row      ", row, ": side_rows ", side_rows, row > 0 ? str(" + ", row, " x rise ", rise) : "", " = ", ROWS, " stud rows, the top ", LID_ROWS, " on the lid\n"));
-if (max(mm(FS[0]), mm(FS[1])) > max(bed_x, bed_y) || min(mm(FS[0]), mm(FS[1])) > min(bed_x, bed_y) || BH + (bottom == "studs" ? stud_h : 0) + (top == "studs" ? stud_h : 0) > bed_z)
+if (max(mm(FS[0]), mm(FS[1])) > max(bed_x, bed_y) || min(mm(FS[0]), mm(FS[1])) > min(bed_x, bed_y) || BH + (bottom == "studs" ? stud_h : 0) + TOP_TIP > bed_z)
     echo("WARNING: the box is too big for the printer bed");
 if (WALL < 3.2) echo(str("NOTE: ", WALL, " mm walls leave a ", SEAT, " mm seat ridge and ", DT_U - lid_clear - detent_bump - 0.1, " mm of lid skin over the detent"));
 if (WALL < SOCKET_MIN && len([for (s = SIDES) if (s == "sockets") s]) > 0)
     echo(str("WARNING: ", WALL, " mm walls leave only ", WALL - SOCKET_H, " mm behind the wall sockets - use ", SOCKET_MIN, " or more"));
 if (FLOOR > floor_t) echo(str("NOTE: floor thickened to ", FLOOR, " mm for the bottom sockets"));
 if (LID_TOP > lid_top) echo(str("NOTE: lid top thickened to ", LID_TOP, " mm for the top sockets"));
+if (LABEL && LABEL_D < label_depth) echo(str("NOTE: label engraved ", LABEL_D, " mm deep, to leave 0.4 mm of the ", LID_TOP, " mm lid top under it - raise lid_top for deeper"));
 if (tab_xs(FS)[1] < TAB_W / 2 + hinge_clear + PIN_L + 2)
     echo(str("WARNING: the box is too short for hinge tabs ", hinge_from_end, " studs from each end - lower hinge_from_end"));
 if (let(l = detent_len * PITCH + 0.6, xs = detent_xs(FS))   // each detent inside the end walls, and two clear of each other
@@ -449,7 +488,7 @@ if (let(l = detent_len * PITCH + 0.6, xs = detent_xs(FS))   // each detent insid
     echo(str("WARNING: ", detent_count, " detent", detent_count == 2 ? "s" : "", " ", detent_len, " studs long don't fit along the front - lower detent_len or detent_count"));
 
 BODY_TIP = bottom == "studs" ? stud_h - eps : 0;   // body printed upright: its bottom studs reach the bed
-LID_TIP = top == "studs" ? stud_h - eps : 0;   // lid printed inverted: its top studs reach the bed
+LID_TIP = TOP_TIP > 0 ? TOP_TIP - eps : 0;   // lid printed inverted: its top studs (or raised label) reach the bed
 module body_print() translate([0, 0, BODY_TIP]) render() box_body(FS, BH);
 module lid_print() translate([0, 0, BH + LID_TIP]) rotate([180, 0, 0]) render() box_lid(FS, BH);
 if (part == "assembled") box();
