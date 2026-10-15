@@ -38,7 +38,9 @@
 //          round the hinge (loose, and with no lead-in the pins are captive)
 //          and under the lid, where the wall tops it stands on are dropped.
 //          The detent bead stands out pip_gap further to make up for the
-//          loose pins, and comes to a point so its groove needs no bridging.
+//          loose pins, and comes to a point so its groove is all 45 deg faces.
+//          Only a narrow strip on the edge of the lid's skin is bridged, between
+//          solid ends where the wall's seat ridge is cut away.
 //          The lid's top studs then print sideways like wall studs
 //          (side_stud_d) and the front of its band faces up (stud_d); top
 //          sockets take side_socket_d. A lid over 1 row tall overhangs the
@@ -175,8 +177,11 @@ DT_BUMP = detent_bump + (PIP ? pip_gap : 0);
 // printed in place the lid stands open, and its front skin is a ceiling over the post:
 // there the bead comes to a point and sits at the foot of the post, so the lid's groove
 // is all 45 deg faces, running on into the chamfer above it - nothing to bridge
-DT_V = PIP ? 2 * (DT_BUMP + lid_clear) : 2.2;   // detent post: the height of its vertical outer face above the seam
-DT_Z = PIP ? DT_BUMP + lid_clear : 1.4;         // detent bead centre above the seam, on the post's outer face
+// Below the groove a flat strip DT_LIP wide is left on the skin's edge: standing open, it
+// is the first layer there, bridged between the solid ends (see detent_trim/detent_fill)
+DT_LIP = PIP ? 0.8 : 0;
+DT_V = PIP ? 2 * (DT_BUMP + lid_clear) + DT_LIP : 2.2;   // detent post: the height of its vertical outer face above the seam
+DT_Z = PIP ? DT_BUMP + lid_clear + DT_LIP : 1.4;         // detent bead centre above the seam, on the post's outer face
 DT_FLAT = PIP ? 0 : 0.6;                        // flat on the bead tip
 SOCKET_H = stud_h + 0.2;   // socket depth: a stud seats fully
 SOCKET_CH = 0.4;        // 45 deg chamfer on the socket mouth: lead-in, and room for first-layer squish
@@ -447,14 +452,20 @@ module detent_bead2d(s) let(b = DT_BUMP + lid_clear, z = s + DT_Z, f = DT_FLAT /
 
 // body: the ridge in front of the post comes off, then the post and bead go on
 module detent_trim(fs, H) let(l = detent_len * PITCH + 0.6, s = H - LID_H)
-    for (x = detent_xs(fs)) along_front(fs, x - l / 2, x + l / 2) translate([-1, s]) square([DT_U + 1, SEAT + 1]);
+    for (x = detent_xs(fs)) {
+        along_front(fs, x - l / 2, x + l / 2) translate([-1, s]) square([DT_U + 1, SEAT + 1]);
+        // printed in place: the whole ridge goes, out to BEEF either side, where the lid's
+        // skin comes down solid to anchor the edge of its pocket (the post goes on after)
+        if (PIP) let(w = l / 2 + BEEF + lid_clear) along_front(fs, x - w, x + w) translate([-1, s]) square([WALL + 2, SEAT + 1]);
+    }
 
 module detent_catches(fs, H) let(l = detent_len * PITCH, s = H - LID_H)
     for (x = detent_xs(fs)) along_front(fs, x - l / 2, x + l / 2)
         intersection() { union() { detent_post2d(s); detent_bead2d(s); } translate([-1, s - eps]) square([WALL + 2, LID_H]); }
 
 // lid: solid skin in place of the groove over the post, then the post's pocket and the bead's groove
-module detent_fill(fs, H) let(l = detent_len * PITCH, s = H - LID_H)
+// (printed in place, BEEF further each side: the solid ends the pocket's edge bridges between)
+module detent_fill(fs, H) let(l = PIP ? detent_len * PITCH + 0.6 + 2 * BEEF : detent_len * PITCH, s = H - LID_H)
     for (x = detent_xs(fs)) along_front(fs, x - l / 2, x + l / 2) translate([0, s]) square([WALL + lid_clear + eps, SEAT + lid_clear + eps]);
 
 module detent_cuts(fs, H) let(l = detent_len * PITCH + 0.6, s = H - LID_H)
