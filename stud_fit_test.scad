@@ -10,7 +10,8 @@
 //      bottom sockets
 //    - back wall: a 2 x 2 group of sideways studs per diameter on its back
 //      face, printed the same way as the box walls (flat underside included),
-//      and a socket group in its front face, like the wall sockets
+//      and in its front face a 2 x 2 socket group and, above it, a 1 x 2
+//      group with a pin, like the wall sockets (a 1-row lid band gets pins)
 //  Each group has its diameter engraved beside it (the underside's mirrored,
 //  to read with the strip flipped over front to back). Press a real 2 x 2
 //  plate onto each stud group and into each socket group (or the studs you
@@ -37,9 +38,10 @@ L = N * GROUP - PITCH + 2 * M;
 LABEL = 9;              // label strip in front of the top studs
 WALL_Y = LABEL + 2 * PITCH + 0.5;   // wall just behind where a 2 x 2 plate on the top studs ends
 BASE_D = WALL_Y + T;
-WALL_H = T + 2 * PITCH + 10;   // room above the wall groups for their labels
-GROUP_Z = T + 4 + PITCH;        // centre height of the wall groups
-WALL_LABEL_Z = (GROUP_Z + PITCH + WALL_H) / 2;   // between the top of the wall groups and the wall top
+GROUP_Z = T + 4 + PITCH;        // centre height of the wall's 2 x 2 groups
+ROW_Z = GROUP_Z + 1.5 * PITCH;  // ... and of the 1 x 2 socket groups, a row above them on the front
+WALL_H = ROW_Z + PITCH / 2 + 8; // room above for the labels
+WALL_LABEL_Z = WALL_H - 4;
 eps = 0.01;
 
 function gx(i) = M + PITCH / 2 + i * GROUP;      // x of the first stud in group i
@@ -62,20 +64,23 @@ module side_stud(d) intersection() {
 // four, going +z from z = 0, chamfered mouth
 SOCKET_H = stud_h + 0.2;
 SOCKET_CH = 0.4;
-module socket_group(d) let(w = PITCH + d, od = PITCH * sqrt(2) - d) difference() {
-    union() {
-        translate([0, 0, -1]) linear_extrude(SOCKET_H + 1) square(w, center = true);
-        for (i = [0:3]) translate([0, 0, i * SOCKET_CH / 4 - (i == 0 ? 1 : 0)])
-            linear_extrude(SOCKET_CH / 4 + (i == 0 ? 1 : 0) + eps) square(w + 2 * SOCKET_CH * (1 - i / 4), center = true);
-    }
+// rows = 1: a 1 x 2 group instead, with a solid pin between the two studs
+// touching both, like the box's single-row sockets (a 1-row lid band)
+module socket_group(d, rows = 2) let(w = [PITCH + d, rows == 1 ? d : PITCH + d], od = rows == 1 ? PITCH - d : PITCH * sqrt(2) - d)
     difference() {
         union() {
-            cylinder(d1 = od - 2 * SOCKET_CH, d2 = od, h = SOCKET_CH + eps, $fn = 48);
-            translate([0, 0, SOCKET_CH]) cylinder(d = od, h = SOCKET_H, $fn = 48);
+            translate([0, 0, -1]) linear_extrude(SOCKET_H + 1) square(w, center = true);
+            for (i = [0:3]) translate([0, 0, i * SOCKET_CH / 4 - (i == 0 ? 1 : 0)])
+                linear_extrude(SOCKET_CH / 4 + (i == 0 ? 1 : 0) + eps) square(w + 2 * SOCKET_CH * (1 - i / 4) * [1, 1], center = true);
         }
-        translate([0, 0, -1]) cylinder(d = od - 1.6, h = SOCKET_H + 2, $fn = 48);
+        difference() {
+            union() {
+                cylinder(d1 = od - 2 * SOCKET_CH, d2 = od, h = SOCKET_CH + eps, $fn = 48);
+                translate([0, 0, SOCKET_CH]) cylinder(d = od, h = SOCKET_H, $fn = 48);
+            }
+            if (rows > 1) translate([0, 0, -1]) cylinder(d = od - 1.6, h = SOCKET_H + 2, $fn = 48);
+        }
     }
-}
 
 difference() {
     union() {
@@ -94,6 +99,8 @@ difference() {
         translate([x, LABEL + PITCH, 0]) socket_group(sizes[i]);
         // wall front face: a 2 x 2 socket group going in (+y) behind the side studs
         translate([x, WALL_Y, GROUP_Z]) rotate([90, 0, 0]) mirror([0, 0, 1]) socket_group(sizes[i]);
+        // ... and a 1 x 2 group above it, with a pin
+        translate([x, WALL_Y, ROW_Z]) rotate([90, 0, 0]) mirror([0, 0, 1]) socket_group(sizes[i], 1);
     }
 }
 for (i = [0:N - 1], a = [0, 1], b = [0, 1]) {
