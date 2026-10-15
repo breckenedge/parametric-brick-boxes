@@ -37,6 +37,8 @@
 //          90 deg on it, nothing to assemble. Gaps of pip_gap separate them:
 //          round the hinge (loose, and with no lead-in the pins are captive)
 //          and under the lid, where the wall tops it stands on are dropped.
+//          The detent bead stands out pip_gap further to make up for the
+//          loose pins, and comes to a point so its groove needs no bridging.
 //          The lid's top studs then print sideways like wall studs
 //          (side_stud_d) and the front of its band faces up (stud_d); top
 //          sockets take side_socket_d. A lid over 1 row tall overhangs the
@@ -164,12 +166,18 @@ TAB_D = 6;              // tab stem depth in front of the axis: a solid block, b
 PIN_L = 1.5;            // pin length out of each tab face
 PIN_FLAT = 0.5;         // flat on top and bottom of each pin: prints clean, and only passes the lead-in at 90 deg
 DT_U = min(2, WALL - 1.2);   // detent post: its outer face, in from the front face (the lid skin outside it)
-DT_V = 2.2;             // ... and the height of that vertical face above the seam
-DT_Z = 1.4;             // detent bead centre above the seam, on the post's outer face
-DT_FLAT = 0.6;          // flat on the bead tip
 BEEF = 2;               // lid: solid margin round the hinge slots and the detent pocket
 PIP = part == "print_in_place";
 HCLR = PIP ? max(hinge_clear, pip_gap) : hinge_clear;   // gap round the tabs in their slots
+// detent bead height: printed in place, the loose pins let the shut lid slide pip_gap
+// forward, away from the bead, so the bead stands out that much further
+DT_BUMP = detent_bump + (PIP ? pip_gap : 0);
+// printed in place the lid stands open, and its front skin is a ceiling over the post:
+// there the bead comes to a point and sits at the foot of the post, so the lid's groove
+// is all 45 deg faces, running on into the chamfer above it - nothing to bridge
+DT_V = PIP ? 2 * (DT_BUMP + lid_clear) : 2.2;   // detent post: the height of its vertical outer face above the seam
+DT_Z = PIP ? DT_BUMP + lid_clear : 1.4;         // detent bead centre above the seam, on the post's outer face
+DT_FLAT = PIP ? 0 : 0.6;                        // flat on the bead tip
 SOCKET_H = stud_h + 0.2;   // socket depth: a stud seats fully
 SOCKET_CH = 0.4;        // 45 deg chamfer on the socket mouth: lead-in, and room for first-layer squish
 SOCKET_MIN = SOCKET_H + 1.2;   // material a socket needs: its depth and a skin behind it
@@ -433,8 +441,9 @@ module detent_post2d(s) let(c = DT_U + DT_TOP - DT_V)
 module detent_pocket2d(s, relief) let(c = DT_U + DT_TOP - DT_V, w = WALL + relief, m = (c + w) / 2)
     polygon([[DT_U, s - 1], [DT_U, s + DT_V], [c, s + DT_TOP], [m, s + DT_TOP + (w - c) / 2], [w, s + DT_TOP], [w, s - 1]]);
 
-module detent_bead2d(s) let(b = detent_bump + lid_clear, z = s + DT_Z, f = DT_FLAT / 2)
-    polygon([[DT_U + eps, z - b - f], [DT_U - b, z - f], [DT_U - b, z + f], [DT_U + eps, z + b + f]]);
+module detent_bead2d(s) let(b = DT_BUMP + lid_clear, z = s + DT_Z, f = DT_FLAT / 2)
+    polygon(f > 0 ? [[DT_U + eps, z - b - f], [DT_U - b, z - f], [DT_U - b, z + f], [DT_U + eps, z + b + f]]
+                  : [[DT_U + eps, z - b], [DT_U - b, z], [DT_U + eps, z + b]]);
 
 // body: the ridge in front of the post comes off, then the post and bead go on
 module detent_trim(fs, H) let(l = detent_len * PITCH + 0.6, s = H - LID_H)
@@ -450,7 +459,7 @@ module detent_fill(fs, H) let(l = detent_len * PITCH, s = H - LID_H)
 
 module detent_cuts(fs, H) let(l = detent_len * PITCH + 0.6, s = H - LID_H)
     for (x = detent_xs(fs)) along_front(fs, x - l / 2, x + l / 2) {
-        offset(delta = lid_clear) detent_pocket2d(s, detent_bump + 0.2);
+        offset(delta = lid_clear) detent_pocket2d(s, DT_BUMP + 0.2);
         offset(delta = 0.1) detent_bead2d(s);
     }
 
@@ -462,7 +471,7 @@ module detent_cuts(fs, H) let(l = detent_len * PITCH + 0.6, s = H - LID_H)
 module lid_hollow(fs, H) let(seam = H - LID_H,
         ins = len([for (s = SIDES) if (s == "sockets") s]) > 0 ? max(WALL - TIP, SOCKET_MIN) : WALL - TIP,   // the top of the groove slope, or room for wall sockets
         hx = TAB_W / 2 + HCLR + PIN_L + max(0.3, PIP ? pip_gap : 0) + BEEF, hy = HR + TAB_D + HCLR + BEEF,
-        dx = (detent_len * PITCH + 0.6) / 2 + BEEF, dy = WALL + lid_clear + detent_bump + 0.3 + BEEF)   // past the pocket
+        dx = (detent_len * PITCH + 0.6) / 2 + BEEF, dy = WALL + lid_clear + DT_BUMP + 0.3 + BEEF)   // past the pocket
     difference() {
         translate([0, 0, seam - 1]) linear_extrude(LID_H - LID_TOP + 1) plan(fs, ins);
         // printed in place, standing open, the front skin is on top: carry the groove's
@@ -555,7 +564,7 @@ echo(str("\n==== Parametric brick box ====",
     "\n  row      ", row, ": side_rows ", side_rows, row > 0 ? str(" + ", row, " x rise ", rise) : "", " = ", ROWS, " stud rows, the top ", LID_ROWS, " on the lid\n"));
 if (max(mm(FS[0]), mm(FS[1])) > max(bed_x, bed_y) || min(mm(FS[0]), mm(FS[1])) > min(bed_x, bed_y) || (bottom == "studs" ? stud_h : 0) + (PIP ? BH - LID_H + mm(FS[1]) + (front == "studs" ? stud_h : 0) : BH + TOP_TIP) > bed_z)
     echo("WARNING: the box is too big for the printer bed");
-if (WALL < 3.2) echo(str("NOTE: ", WALL, " mm walls leave a ", SEAT, " mm seat ridge and ", DT_U - lid_clear - detent_bump - 0.1, " mm of lid skin over the detent"));
+if (WALL < 3.2) echo(str("NOTE: ", WALL, " mm walls leave a ", SEAT, " mm seat ridge and ", DT_U - lid_clear - DT_BUMP - 0.1, " mm of lid skin over the detent"));
 if (WALL < SOCKET_MIN && len([for (s = SIDES) if (s == "sockets") s]) > 0)
     echo(str("WARNING: ", WALL, " mm walls leave only ", WALL - SOCKET_H, " mm behind the wall sockets - use ", SOCKET_MIN, " or more"));
 if (FLOOR > floor_t) echo(str("NOTE: floor thickened to ", FLOOR, " mm for the bottom sockets"));
