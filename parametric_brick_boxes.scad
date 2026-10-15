@@ -118,6 +118,8 @@ label = "";
 // text height, mm
 label_size = 8;         // [3:0.5:30]
 label_font = "Liberation Sans:style=Bold";
+// lean the letters forward, degrees: italics for any font
+label_slant = 0;        // [0:1:30]
 // engraved into the top skin (no supports), or raised off it
 label_style = "engraved";   // [engraved, raised]
 // how deep it is engraved, or how far it stands up, mm; 0 leaves just the stud-free space
@@ -178,11 +180,13 @@ TOP_TIP = max(top == "studs" ? stud_h : 0, LABEL && RAISED ? LABEL_D : 0);   // 
 LABEL_GAP = 1;          // clear space round the text
 // the text's bounding box, [[x0, y0], [x1, y1]]. OpenSCAD without textmetrics() gets an estimate
 LABEL_TM = LABEL ? textmetrics(text = label, size = label_size, font = label_font, halign = "center", valign = "center") : undef;
-LABEL_BOX = is_undef(LABEL_TM) ? let(w = len(label) * label_size * 0.7) [[-w / 2, -label_size / 2], [w / 2, label_size / 2]]
-                               : [LABEL_TM.position, LABEL_TM.position + LABEL_TM.size];
+LABEL_UPRIGHT = is_undef(LABEL_TM) ? let(w = len(label) * label_size * 0.7) [[-w / 2, -label_size / 2], [w / 2, label_size / 2]]
+                                   : [LABEL_TM.position, LABEL_TM.position + LABEL_TM.size];
+LABEL_BOX = let(b = LABEL_UPRIGHT, t = tan(label_slant))   // slanted, the top leans right and the bottom left
+    [[b[0][0] + min(t * b[0][1], t * b[1][1]), b[0][1]], [b[1][0] + max(t * b[0][1], t * b[1][1]), b[1][1]]];
 function in_label(fs, x, y) = let(r = (top == "sockets" ? socket_d / 2 + SOCKET_CH : stud_d / 2) + LABEL_GAP)
     LABEL && x > LABEL_BOX[0][0] - r && x < LABEL_BOX[1][0] + r && y > LABEL_BOX[0][1] - r && y < LABEL_BOX[1][1] + r;
-module label2d(fs) text(label, size = label_size, font = label_font, halign = "center", valign = "center");
+module label2d(fs) multmatrix([[1, tan(label_slant), 0, 0], [0, 1, 0, 0], [0, 0, 1, 0]]) text(label, size = label_size, font = label_font, halign = "center", valign = "center");
 
 // ---------------------------------------------------------------------
 //  Studs
