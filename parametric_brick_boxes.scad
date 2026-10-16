@@ -588,6 +588,8 @@ if (LABEL && (LABEL_BOX[1][0] - LABEL_BOX[0][0] > mm(FS[0]) - 2 * WALL || LABEL_
 if (LABEL && LABEL_D < label_depth) echo(str("NOTE: label engraved ", LABEL_D, " mm deep, to leave 0.4 mm of the ", LID_TOP, " mm lid top under it - raise lid_top for deeper"));
 if (PIP && LID_ROWS > 1)
     echo(str("NOTE: printed in place, a lid ", LID_ROWS, " rows tall overhangs the back of the box by ", LID_H - PITCH, " mm - it needs supports there"));
+if (PIP && FS[1] > 5)
+    echo(str("WARNING: printed in place, the open lid stands ", FS[1], " studs tall - over 5, it can wobble or knock the box loose; print it in two pieces (part = print)"));
 if (tab_xs(FS)[1] < TAB_W / 2 + HCLR + PIN_L + 2)
     echo(str("WARNING: the box is too short for hinge tabs ", hinge_from_end, " studs from each end - lower hinge_from_end"));
 if (let(l = detent_len * PITCH + 0.6, xs = detent_xs(FS))   // each detent inside the end walls, and two clear of each other
