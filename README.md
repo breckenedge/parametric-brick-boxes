@@ -40,7 +40,8 @@ or flat), with storage inside.
   how firm the snap is).
 - By default (`part = print_in_place`) it prints as one piece, the body upright with the
   lid standing open on it: no assembly, and the hinge can't come apart (`pip_gap` sets
-  the clearance between the parts). Or pick `part = print` for two pieces, the body
+  the clearance between the parts). On a bed slinger (like the A1), orient it so the
+  standing lid is perpendicular to the Y axis. Or pick `part = print` for two pieces, the body
   upright and the lid inverted (top down), on a snug friction hinge you assemble. A part
   standing on studs (bottom studs for the body, top studs for a two-piece lid) needs
   supports. With `sockets` or `flat` there, it prints flat without supports. Print
