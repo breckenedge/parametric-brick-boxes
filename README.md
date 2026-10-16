@@ -65,6 +65,11 @@ Open `parametric_brick_boxes.scad` in OpenSCAD (a recent nightly with the
 Manifold backend renders much faster) and use the Customizer. Set the size and `row`,
 pick `part = print_in_place / print / body / lid / assembled`, then render and export.
 
+`tools/build_3mf.sh` builds ready-to-print Bambu Studio projects for the A1 (Windows, Git
+Bash; it runs OpenSCAD and Bambu Studio), e.g. `tools/build_3mf.sh 3mf 6x5 16x8`. Boxes
+up to 5 studs wide come out printed in place, wider ones in two pieces with supports.
+The printer, filament, process and stud sizes are variables at the top of the script.
+
 `archive/` holds an earlier, decorative pillar version.
 
 ## License
