@@ -293,8 +293,8 @@ module socket_field(us, vs, d, keep = [undef, undef, undef, undef], skip = []) d
         for (i = [0:3]) translate([0, 0, i * SOCKET_CH / 4 - (i == 0 ? 1 : 0)])
             linear_extrude(SOCKET_CH / 4 + (i == 0 ? 1 : 0) + eps) offset(delta = SOCKET_CH * (1 - i / 4)) recess2d(us, vs, d, keep, skip);
     }
-    // tubes touch the 4 studs round them (od + d = the diagonal pitch), walls 0.8 thick; pins touch the 2 either side
-    if (len(us) > 1 && len(vs) > 1) for (u = mids(us), v = mids(vs)) translate([u, v, 0]) let(od = PITCH * sqrt(2) - d) socket_post(od, od - 1.6);
+    // tubes touch the 4 studs round them (od + d = the diagonal pitch) and take a stud inside too (id = d); pins touch the 2 either side
+    if (len(us) > 1 && len(vs) > 1) for (u = mids(us), v = mids(vs)) translate([u, v, 0]) let(od = PITCH * sqrt(2) - d) socket_post(od, d);
     else if (len(us) > 1) for (u = mids(us)) translate([u, vs[0], 0]) socket_post(PITCH - d);
     else if (len(vs) > 1) for (v = mids(vs)) translate([us[0], v, 0]) socket_post(PITCH - d);
 }
