@@ -62,9 +62,7 @@ use <fonts/Fredoka.ttf>
 
 /* [Box to print] */
 // print_in_place: body and lid as one piece, the lid standing open at 90 deg - nothing to assemble, and the hinge can't come apart. print: body and lid side by side, to assemble
-part = "print_in_place"; // [print_in_place, print, body, lid, assembled]
-// open the lid in previews, degrees
-lid_open = 0;           // [0:5:90]
+part = "print_in_place"; // [print_in_place, print, body, lid]
 // print_in_place: the gap left between body and lid, mm
 pip_gap = 0.3;          // [0.2:0.05:0.6]
 
@@ -422,8 +420,8 @@ module hinge_cuts(fs, H) {
     }
 }
 
-// the lid's pose: hinged open by lid_open
-module lid_pose(fs, H, open = lid_open) let(a = hinge_axis(fs, H))
+// the lid's pose: hinged open by open degrees
+module lid_pose(fs, H, open) let(a = hinge_axis(fs, H))
     translate([0, a[0], a[1]]) rotate([-open, 0, 0]) translate([0, -a[0], -a[1]]) children();
 
 // ---------------------------------------------------------------------
@@ -571,11 +569,6 @@ module box_lid(fs, H) {
 body_color = [0.55, 0.56, 0.58];   // mid gray
 lid_color  = [0.78, 0.79, 0.80];   // light gray, so the seam stays easy to see
 
-module box() {
-    color(body_color) render() box_body(FS, BH);
-    color(lid_color) lid_pose(FS, BH) render() box_lid(FS, BH);
-}
-
 // ---------------------------------------------------------------------
 //  Output
 // ---------------------------------------------------------------------
@@ -607,8 +600,7 @@ BODY_TIP = bottom == "studs" ? stud_h - eps : 0;   // body printed upright: its 
 LID_TIP = TOP_TIP > 0 ? TOP_TIP - eps : 0;   // lid printed inverted: its top studs (or raised label) reach the bed
 module body_print() translate([0, 0, BODY_TIP]) render() box_body(FS, BH);
 module lid_print() translate([0, 0, BH + LID_TIP]) rotate([180, 0, 0]) render() box_lid(FS, BH);
-if (part == "assembled") box();
-else if (part == "body") color(body_color) body_print();
+if (part == "body") color(body_color) body_print();
 else if (part == "lid") color(lid_color) lid_print();
 else if (PIP) translate([0, 0, BODY_TIP]) {   // print in place: body upright, the lid standing open on it
     color(body_color) render() box_body(FS, BH);
