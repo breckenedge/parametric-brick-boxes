@@ -40,9 +40,13 @@ or flat), with storage inside.
   how firm the snap is).
 - By default (`part = print_in_place`) it prints as one piece, the body upright with the
   lid standing open on it: no assembly, and the hinge can't come apart (`pip_gap` sets
-  the clearance between the parts). On a bed slinger (like the A1), orient it so the
-  standing lid is perpendicular to the Y axis: on the author's A1, a lid turned the other
-  way wobbled badly once it stood about 6 studs (48 mm) tall. Or pick `part = print` for two pieces, the body
+  the clearance between the parts). This only suits small lids: the open lid stands
+  as tall as the box is wide (`studs_w`), and a tall one gets knocked over or takes
+  the box with it. On the author's A1, a 6 x 5 box comes out well. An 8-stud-wide box
+  failed at about the lid's third row of studs: the whole box came loose, even on the
+  textured PEI plate. With the lid turned parallel to the Y axis (on a bed slinger the
+  standing lid should be perpendicular to it), the lid wobbled badly at about 6 studs.
+  For a bigger box, pick `part = print` for two pieces, the body
   upright and the lid inverted (top down), on a snug friction hinge you assemble. A part
   standing on studs (bottom studs for the body, top studs for a two-piece lid) needs
   supports. With `sockets` or `flat` there, it prints flat without supports. Print
@@ -59,7 +63,8 @@ or flat), with storage inside.
   with the default faces (studs on the top and front, sockets on the bottom and back,
   flat sides). They use
   `stud_d` 5.05, `side_stud_d` 5.00, `socket_d` 4.95 and `side_socket_d` 4.90; on
-  another printer or filament, print the fit test and make your own.
+  another printer or filament, print the fit test and make your own. All three bigger
+  sizes are 8 studs wide, the size that failed above; only the 6 x 5 is known to print.
 
 ## Use
 
