@@ -46,6 +46,7 @@ or flat), with storage inside.
   failed at about the lid's third row of studs: the whole box came loose, even on the
   textured PEI plate. With the lid turned parallel to the Y axis (on a bed slinger the
   standing lid should be perpendicular to it), the lid wobbled badly at about 6 studs.
+  OpenSCAD warns in the console when an open lid would stand over 5 studs tall.
   For a bigger box, pick `part = print` for two pieces, the body
   upright and the lid inverted (top down), on a snug friction hinge you assemble. A part
   standing on studs (bottom studs for the body, top studs for a two-piece lid) needs
@@ -57,14 +58,6 @@ or flat), with storage inside.
   well: `stud_d` (top studs) 5.05, `side_stud_d` (side studs) 4.95–5.00,
   `socket_d` (top and bottom sockets) 4.95 and `side_socket_d` (side sockets)
   4.85–4.95.
-- `3mf/` has ready-to-print Bambu Studio projects for the A1 (0.4 mm nozzle, SUNLU PLA+
-  2.0, 0.20mm Standard, textured PEI plate) at 6 x 5, 8 x 8, 16 x 8 and 22 x 8 studs,
-  3 rows tall, printed in place (`brick_box_<size>_print_in_place.3mf`, no supports),
-  with the default faces (studs on the top and front, sockets on the bottom and back,
-  flat sides). They use
-  `stud_d` 5.05, `side_stud_d` 5.00, `socket_d` 4.95 and `side_socket_d` 4.90; on
-  another printer or filament, print the fit test and make your own. All three bigger
-  sizes are 8 studs wide, the size that failed above; only the 6 x 5 is known to print.
 
 ## Use
 

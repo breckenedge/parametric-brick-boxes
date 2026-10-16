@@ -2,5 +2,3 @@
 *.stl
 *.3mf
 *.json
-# ...except the ready-to-print projects
-!3mf/*.3mf
