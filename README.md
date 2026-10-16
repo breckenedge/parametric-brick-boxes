@@ -27,7 +27,8 @@ or flat), with storage inside.
 - Optional text label on the lid top (**Lid label** group): set `label`, and it's
   centred on the lid with the top studs or sockets round it left out. The text is
   engraved into the top skin (prints without supports) or raised off it (`label_style`),
-  in any installed font (`label_font`), and can lean into italics (`label_slant`).
+  in any installed font (`label_font`), can lean into italics (`label_slant`) and can be
+  turned to any angle (`label_rotate`).
 - Set `row` for where the box will stand (0 = front): each row back is taller, so
   whatever stands on the boxes in back sits higher.
 - Hinged lid on two pinned tabs at the back. On a two-piece box, friction holds it at any angle up to 90°,

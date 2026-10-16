@@ -141,6 +141,8 @@ label_size = 8;         // [3:0.5:30]
 label_font = "Fredoka:style=Bold";   // font
 // lean the letters forward, degrees: italics for any font
 label_slant = 10;       // [0:1:30]
+// turn the label on the lid top, degrees anticlockwise (0 reads from the front)
+label_rotate = 0;       // [0:1:359]
 // engraved into the top skin (no supports), or raised off it
 label_style = "engraved";   // [engraved, raised]
 // how deep it is engraved, or how far it stands up, mm; 0 leaves just the stud-free space
@@ -217,9 +219,14 @@ LABEL_UPRIGHT = is_undef(LABEL_TM) ? let(w = len(label) * label_size * 0.7) [[-w
 LABEL_BOX = let(b = LABEL_UPRIGHT, t = tan(label_slant))   // slanted, the top leans right and the bottom left
     [[b[0][0] + min(t * b[0][1], t * b[1][1]), b[0][1]], [b[1][0] + max(t * b[0][1], t * b[1][1]), b[1][1]]];
 // (sockets: a whole stud cell clear of it, so the socket field round it stays whole)
-function in_label(fs, x, y) = let(r = (top == "sockets" ? PITCH / 2 : stud_d / 2) + LABEL_GAP)
-    LABEL && x > LABEL_BOX[0][0] - r && x < LABEL_BOX[1][0] + r && y > LABEL_BOX[0][1] - r && y < LABEL_BOX[1][1] + r;
-module label2d(fs) multmatrix([[1, tan(label_slant), 0, 0], [0, 1, 0, 0], [0, 0, 1, 0]]) text(label, size = label_size, font = label_font, halign = "center", valign = "center");
+function rot2(a, p) = [p[0] * cos(a) - p[1] * sin(a), p[0] * sin(a) + p[1] * cos(a)];
+// the stud position turned back into the label's own frame, so a turned label clears only the studs it covers
+function in_label(fs, x, y) = let(r = (top == "sockets" ? PITCH / 2 : stud_d / 2) + LABEL_GAP, p = rot2(-label_rotate, [x, y]))
+    LABEL && p[0] > LABEL_BOX[0][0] - r && p[0] < LABEL_BOX[1][0] + r && p[1] > LABEL_BOX[0][1] - r && p[1] < LABEL_BOX[1][1] + r;
+// the turned label's footprint on the lid, [width, depth]
+LABEL_SPAN = let(b = LABEL_BOX, c = [for (x = [b[0][0], b[1][0]], y = [b[0][1], b[1][1]]) rot2(label_rotate, [x, y])])
+    [max([for (q = c) q[0]]) - min([for (q = c) q[0]]), max([for (q = c) q[1]]) - min([for (q = c) q[1]])];
+module label2d(fs) rotate(label_rotate) multmatrix([[1, tan(label_slant), 0, 0], [0, 1, 0, 0], [0, 0, 1, 0]]) text(label, size = label_size, font = label_font, halign = "center", valign = "center");
 
 // ---------------------------------------------------------------------
 //  Studs
@@ -583,7 +590,7 @@ if (WALL < SOCKET_MIN && len([for (s = SIDES) if (s == "sockets") s]) > 0)
     echo(str("WARNING: ", WALL, " mm walls leave only ", WALL - SOCKET_H, " mm behind the wall sockets - use ", SOCKET_MIN, " or more"));
 if (FLOOR > floor_t) echo(str("NOTE: floor thickened to ", FLOOR, " mm for the bottom sockets"));
 if (LID_TOP > lid_top) echo(str("NOTE: lid top thickened to ", LID_TOP, " mm for the top sockets"));
-if (LABEL && (LABEL_BOX[1][0] - LABEL_BOX[0][0] > mm(FS[0]) - 2 * WALL || LABEL_BOX[1][1] - LABEL_BOX[0][1] > mm(FS[1]) - 2 * WALL))
+if (LABEL && (LABEL_SPAN[0] > mm(FS[0]) - 2 * WALL || LABEL_SPAN[1] > mm(FS[1]) - 2 * WALL))
     echo(str("WARNING: the label runs off the lid top - lower label_size or shorten the text"));
 if (LABEL && LABEL_D < label_depth) echo(str("NOTE: label engraved ", LABEL_D, " mm deep, to leave 0.4 mm of the ", LID_TOP, " mm lid top under it - raise lid_top for deeper"));
 if (PIP && LID_ROWS > 1)
