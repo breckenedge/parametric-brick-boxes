@@ -71,8 +71,10 @@ pick `part = print_in_place / print / body / lid`, then render and export.
 
 `tools/build_3mf.sh` builds ready-to-print Bambu Studio projects for the A1 (Windows, Git
 Bash; it runs OpenSCAD and Bambu Studio), e.g. `tools/build_3mf.sh 3mf 6x5 16x8`. Boxes
-up to 5 studs wide come out printed in place, wider ones in two pieces, all without
-supports (`SUPPORTS=1` turns them on, for bottom studs) and with a 5 mm outer brim, since
+up to 5 studs wide come out printed in place, wider ones in two pieces. Only the lid of a
+two-piece box gets supports, tree supports from the bed under its long bridged top
+(`LID_SUPPORTS=0` turns them off; `SUPPORTS=1` puts them everywhere, for bottom studs).
+Every box gets a 5 mm outer brim, since
 a body with bottom sockets only meets the bed with a thin rim (`BRIM=0` turns it off).
 The printer, filament, process and stud sizes are variables at the top of the script.
 

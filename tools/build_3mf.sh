@@ -10,7 +10,8 @@
 # (otherwise the scad's default). Boxes up to 5 studs wide come out printed in place
 # (brick_box_<size>_print_in_place.3mf); wider ones in two pieces (brick_box_<size>.3mf),
 # since a tall open lid knocks the box loose (see the README). Set MODE=pip or MODE=two to
-# force one. No supports: set SUPPORTS=1 for tree supports on the bed (bottom studs need them).
+# force one. No supports, except under two-piece lids over 5 studs wide (LID_SUPPORTS,
+# LID_BRIDGE); set SUPPORTS=1 for tree supports on the bed everywhere (bottom studs need them).
 # A 5 mm outer brim for grip: BRIM=<width> changes it, BRIM=0 turns it off.
 # Takes a few minutes a box. Override any path or the stud sizes with the variables below.
 set -euo pipefail
@@ -29,6 +30,10 @@ PROCESS=${PROCESS:-"0.20mm Standard @BBL A1"}
 FILAMENT=${FILAMENT:-"SUNLU PLA+ 2.0 @BBL A1"}
 BED=${BED:-"Textured PEI Plate"}
 SUPPORTS=${SUPPORTS:-0}
+# two-piece lids wider than LID_BRIDGE studs get tree supports of their own under the bridged
+# top skin (a 4-wide lid bridged fine without); the body never does. LID_SUPPORTS=0 for none
+LID_SUPPORTS=${LID_SUPPORTS:-1}
+LID_BRIDGE=${LID_BRIDGE:-5}
 # outer brim width, mm (0 for none): with bottom sockets the body only meets the bed with a thin rim
 BRIM=${BRIM:-5}
 # the author's fit-test results on the A1 with SUNLU PLA+ 2.0 (README)
@@ -54,13 +59,13 @@ stl() { # size part file
     local l wd h; IFS=x read -r l wd h <<< "$1"
     "$OPENSCAD" --backend=manifold $STUDS -D studs_l=$l -D studs_w=$wd ${h:+-D side_rows=$h} -D "part=\"$2\"" -o "$3" "$SCAD" 2>&1 | grep -E 'WARNING|ERROR' || true
 }
-project() { # 3mf stl...
-    local out=$1; shift
+project() { # 3mf supported-object stl...
+    local out=$1 sobj=$2; shift 2
     local stls=(); for s in "$@"; do stls+=("$(w "$s")"); done
     "$BAMBU" --arrange 1 --orient 0 --load-settings "$(w "$WORK/machine.json");$(w "$WORK/process.json")" \
         --load-filaments "$(w "$WORK/filament.json")" --export-3mf "$(w "$out")" "${stls[@]}"
     [ -s "$out" ] || { echo "failed: $out" >&2; exit 1; }
-    powershell -NoProfile -ExecutionPolicy Bypass -File "$(w "$HERE/mark_changed.ps1")" "$(w "$out")" "$(w "$WORK/ov.json")"
+    powershell -NoProfile -ExecutionPolicy Bypass -File "$(w "$HERE/mark_changed.ps1")" "$(w "$out")" "$(w "$WORK/ov.json")" ${sobj:+"$sobj"}
     echo "built $out"
 }
 
@@ -70,10 +75,11 @@ for sz in "${SIZES[@]}"; do
     [ "$mode" = auto ] && { [ "$wd" -le 5 ] && mode=pip || mode=two; }
     if [ "$mode" = pip ]; then
         stl "$sz" print_in_place "$WORK/brick box $sz print in place.stl"
-        project "$OUT/brick_box_${sz}_print_in_place.3mf" "$WORK/brick box $sz print in place.stl"
+        project "$OUT/brick_box_${sz}_print_in_place.3mf" "" "$WORK/brick box $sz print in place.stl"
     else
         stl "$sz" body "$WORK/brick box $sz body.stl"
         stl "$sz" lid "$WORK/brick box $sz lid.stl"
-        project "$OUT/brick_box_${sz}.3mf" "$WORK/brick box $sz body.stl" "$WORK/brick box $sz lid.stl"
+        sobj=""; [ "$LID_SUPPORTS" = 1 ] && [ "$wd" -gt "$LID_BRIDGE" ] && sobj="$sz lid.stl"
+        project "$OUT/brick_box_${sz}.3mf" "$sobj" "$WORK/brick box $sz body.stl" "$WORK/brick box $sz lid.stl"
     fi
 done
