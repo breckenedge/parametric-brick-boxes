@@ -10,6 +10,7 @@
 # (brick_box_<size>_print_in_place.3mf); wider ones in two pieces (brick_box_<size>.3mf),
 # since a tall open lid knocks the box loose (see the README). Set MODE=pip or MODE=two to
 # force one. No supports: set SUPPORTS=1 for tree supports on the bed (bottom studs need them).
+# A 5 mm outer brim for grip: BRIM=<width> changes it, BRIM=0 turns it off.
 # Takes a few minutes a box. Override any path or the stud sizes with the variables below.
 set -euo pipefail
 
@@ -27,6 +28,8 @@ PROCESS=${PROCESS:-"0.20mm Standard @BBL A1"}
 FILAMENT=${FILAMENT:-"SUNLU PLA+ 2.0 @BBL A1"}
 BED=${BED:-"Textured PEI Plate"}
 SUPPORTS=${SUPPORTS:-0}
+# outer brim width, mm (0 for none): with bottom sockets the body only meets the bed with a thin rim
+BRIM=${BRIM:-5}
 # the author's fit-test results on the A1 with SUNLU PLA+ 2.0 (README)
 STUDS=${STUDS:-"-D stud_d=5.05 -D side_stud_d=5.00 -D socket_d=4.95 -D side_socket_d=4.90"}
 
@@ -36,11 +39,11 @@ w() { cygpath -w "$1"; }
 
 # Bambu Studio's CLI ignores a preset's "inherits", so flatten each one first
 # (otherwise it falls back to a 200 mm bed and default filament settings)
-if [ "$SUPPORTS" = 1 ]; then
-    echo "{\"enable_support\": \"1\", \"support_type\": \"tree(auto)\", \"support_on_build_plate_only\": \"1\", \"curr_bed_type\": \"$BED\"}" > "$WORK/ov.json"
-else
-    echo "{\"enable_support\": \"0\", \"curr_bed_type\": \"$BED\"}" > "$WORK/ov.json"
-fi
+if [ "$SUPPORTS" = 1 ]; then sup='"enable_support": "1", "support_type": "tree(auto)", "support_on_build_plate_only": "1"'
+else sup='"enable_support": "0"'; fi
+if [ "$BRIM" = 0 ]; then brim='"brim_type": "no_brim"'
+else brim="\"brim_type\": \"outer_only\", \"brim_width\": \"$BRIM\", \"brim_object_gap\": \"0.1\""; fi
+echo "{$sup, $brim, \"curr_bed_type\": \"$BED\"}" > "$WORK/ov.json"
 resolve() { powershell -NoProfile -ExecutionPolicy Bypass -File "$(w "$HERE/resolve.ps1")" "$(w "$PRESETS")" "$1" "$(w "$2")" ${3:+"$(w "$3")"}; }
 resolve "$MACHINE" "$WORK/machine.json"
 resolve "$PROCESS" "$WORK/process.json" "$WORK/ov.json"
