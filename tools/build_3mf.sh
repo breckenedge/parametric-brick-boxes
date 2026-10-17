@@ -8,7 +8,7 @@
 #
 # Sizes are <studs_l>x<studs_w>. Boxes up to 5 studs wide come out printed in place
 # (brick_box_<size>_print_in_place.3mf, no supports); wider ones in two pieces
-# (brick_box_<size>.3mf, tree supports on the bed for the lid's top studs), since a tall
+# (brick_box_<size>.3mf, tree supports on the bed under the lid's hollow underside), since a tall
 # open lid knocks the box loose (see the README). Set MODE=pip or MODE=two to force one.
 # Takes a few minutes a box. Override any path or the stud sizes with the variables below.
 set -euo pipefail

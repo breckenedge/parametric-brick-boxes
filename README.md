@@ -10,7 +10,7 @@ or flat), with storage inside.
 |---|---|
 | ![Closed box, studded on every face](images/closed.png) | ![Box with a plain lid top and plain ends, studs only on the front and back](images/faces.png) |
 | **Print layout** | **Rows 0, 1 and 2** |
-| ![Body upright, lid inverted beside it](images/print.png) | ![Three boxes stepping up from front to back](images/lineup.png) |
+| ![Body upright, lid beside it](images/print.png) | ![Three boxes stepping up from front to back](images/lineup.png) |
 
 - Everything is in LEGO units: footprints in studs (8 mm), heights in stud rows (8 mm).
 - Box size is set directly in studs (`studs_l` x `studs_w`).
@@ -49,9 +49,9 @@ or flat), with storage inside.
   standing lid should be perpendicular to it), the lid wobbled badly at about 6 studs.
   OpenSCAD warns in the console when an open lid would stand over 5 studs tall.
   For a bigger box, pick `part = print` for two pieces, the body
-  upright and the lid inverted (top down), on a snug friction hinge you assemble. A part
-  standing on studs (bottom studs for the body, top studs for a two-piece lid) needs
-  supports. With `sockets` or `flat` there, it prints flat without supports. Print
+  and the lid both upright, on a snug friction hinge you assemble. The lid needs supports
+  under its hollow underside. The body needs them only on bottom studs; with bottom
+  `sockets` or `flat` it prints flat without supports. Print
   `stud_fit_test.scad` first to find your stud and socket sizes, then a small 6 x 5 box
   to check the whole fit.
   For reference, on the author's Bambu Lab A1 printing
