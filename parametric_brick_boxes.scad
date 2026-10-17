@@ -482,10 +482,27 @@ module detent_cuts(fs, H) let(l = detent_len * PITCH + 0.6, s = H - LID_H)
 //  with the sloped groove edge) is open, except solid blocks round the
 //  hinge slots and the detent pockets.
 // ---------------------------------------------------------------------
+// the solid blocks: half-width round each hinge tab and depth in from the back; half-width
+// round each detent and depth in from the front, past the pocket
+HB_X = TAB_W / 2 + HCLR + PIN_L + max(0.3, PIP ? pip_gap : 0) + BEEF;
+HB_Y = HR + TAB_D + HCLR + BEEF;
+DB_X = (detent_len * PITCH + 0.6) / 2 + BEEF;
+DB_Y = WALL + lid_clear + DT_BUMP + 0.3 + BEEF;
+
+// two-piece, printed top up: the blocks' undersides inside the body's walls, where the groove
+// cut leaves them hanging over the bed, come down to it (their slots and pockets are cut after)
+module block_feet(fs, H) let(L = mm(fs[0]), W = mm(fs[1]))
+    translate([0, 0, H - LID_H]) linear_extrude(SEAT + lid_clear + eps) intersection() {
+        plan(fs, WALL + lid_clear);
+        union() {
+            for (tx = tab_xs(fs)) translate([tx - HB_X, W / 2 - HB_Y]) square([2 * HB_X, HB_Y]);
+            for (x = detent_xs(fs)) translate([x - DB_X, -W / 2]) square([2 * DB_X, DB_Y]);
+        }
+    }
+
 module lid_hollow(fs, H) let(seam = H - LID_H,
         ins = len([for (s = SIDES) if (s == "sockets") s]) > 0 ? max(WALL - TIP, SOCKET_MIN) : WALL - TIP,   // the top of the groove slope, or room for wall sockets
-        hx = TAB_W / 2 + HCLR + PIN_L + max(0.3, PIP ? pip_gap : 0) + BEEF, hy = HR + TAB_D + HCLR + BEEF,
-        dx = (detent_len * PITCH + 0.6) / 2 + BEEF, dy = WALL + lid_clear + DT_BUMP + 0.3 + BEEF)   // past the pocket
+        hx = HB_X, hy = HB_Y, dx = DB_X, dy = DB_Y)
     difference() {
         translate([0, 0, seam - 1]) linear_extrude(LID_H - LID_TOP + 1) plan(fs, ins);
         // printed in place, standing open, the front skin is on top: carry the groove's
@@ -541,6 +558,7 @@ module box_lid(fs, H) {
                 front_of(fs, mm(fs[1]) / 2 - HR) ridge(fs, seam - 1, RIM - lid_clear - 1, SEAT + lid_clear + 1);
             }
             detent_fill(fs, H);
+            if (!PIP) block_feet(fs, H);
         }
         hinge_cuts(fs, H);
         detent_cuts(fs, H);
