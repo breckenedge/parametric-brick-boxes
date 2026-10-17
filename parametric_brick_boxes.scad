@@ -28,9 +28,10 @@
 //  Printing (part = print_in_place, the default, or part = print for two pieces):
 //    body  upright as modelled (open top up). Bottom studs land on the bed
 //          and need supports; with bottom sockets or flat, no supports
-//    lid   upright as modelled (top up, open underside down). Its hollow
-//          underside - the top skin, the 45 deg groove edge, hinge slots,
-//          detent pocket - needs supports; the top studs print upright
+//    lid   upright as modelled (top up, open underside down), its flat bottom
+//          edge on the bed (it sits flush on the flat wall top). The top skin
+//          over the hollow and the hinge slots need supports; the top studs
+//          print upright
 //    print_in_place: one piece, the body upright with the lid standing open
 //          90 deg on it, nothing to assemble. Gaps of pip_gap separate them:
 //          round the hinge (loose, and with no lead-in the pins are captive)
@@ -489,17 +490,6 @@ HB_Y = HR + TAB_D + HCLR + BEEF;
 DB_X = (detent_len * PITCH + 0.6) / 2 + BEEF;
 DB_Y = WALL + lid_clear + DT_BUMP + 0.3 + BEEF;
 
-// two-piece, printed top up: the blocks' undersides inside the body's walls, where the groove
-// cut leaves them hanging over the bed, come down to it (their slots and pockets are cut after)
-module block_feet(fs, H) let(L = mm(fs[0]), W = mm(fs[1]))
-    translate([0, 0, H - LID_H]) linear_extrude(SEAT + lid_clear + eps) intersection() {
-        plan(fs, WALL + lid_clear);
-        union() {
-            for (tx = tab_xs(fs)) translate([tx - HB_X, W / 2 - HB_Y]) square([2 * HB_X, HB_Y]);
-            for (x = detent_xs(fs)) translate([x - DB_X, -W / 2]) square([2 * DB_X, DB_Y]);
-        }
-    }
-
 module lid_hollow(fs, H) let(seam = H - LID_H,
         ins = len([for (s = SIDES) if (s == "sockets") s]) > 0 ? max(WALL - TIP, SOCKET_MIN) : WALL - TIP,   // the top of the groove slope, or room for wall sockets
         hx = HB_X, hy = HB_Y, dx = DB_X, dy = DB_Y)
@@ -523,8 +513,10 @@ module box_body(fs, H) {
             difference() {
                 union() {
                     linear_extrude(seam) plan(fs);
-                    // hinged: no ridge where the lid's back edge swings down past it
-                    front_of(fs, mm(fs[1]) / 2 - 2 * HR - 0.5) ridge(fs, seam - eps, RIM, SEAT);
+                    // printed in place: a seat ridge (the clasp is built round it), but none where
+                    // the lid's back edge swings down past it. Two-piece: a flat wall top the lid
+                    // sits flush on, so the lid, printed top up, is flat on the bed
+                    if (PIP) front_of(fs, mm(fs[1]) / 2 - 2 * HR - 0.5) ridge(fs, seam - eps, RIM, SEAT);
                 }
                 translate([0, 0, FLOOR]) linear_extrude(seam + SEAT) plan(fs, WALL);
                 detent_trim(fs, H);
@@ -545,20 +537,20 @@ module box_body(fs, H) {
     }
 }
 
-// lid in box coordinates: it sits on the seam, H - LID_H. Its underside has
-// a 45 deg groove that drops over the wall ridge and centres it; inside that
-// it is hollow. It prints upright, on supports.
+// lid in box coordinates: it sits on the seam, H - LID_H, flush on the flat wall
+// top (printed in place, a 45 deg groove in its underside drops over the wall's
+// ridge instead); inside that it is hollow. Two-piece, it prints upright.
 module box_lid(fs, H) {
     seam = H - LID_H;
     difference() {
         union() {
             difference() {
                 rounded_top(fs, seam, H);
-                // the groove stops at the axis; behind it the lid is solid over the wall
-                front_of(fs, mm(fs[1]) / 2 - HR) ridge(fs, seam - 1, RIM - lid_clear - 1, SEAT + lid_clear + 1);
+                // printed in place, the groove over the ridge; it stops at the axis, behind it the
+                // lid is solid over the wall
+                if (PIP) front_of(fs, mm(fs[1]) / 2 - HR) ridge(fs, seam - 1, RIM - lid_clear - 1, SEAT + lid_clear + 1);
             }
             detent_fill(fs, H);
-            if (!PIP) block_feet(fs, H);
         }
         hinge_cuts(fs, H);
         detent_cuts(fs, H);
