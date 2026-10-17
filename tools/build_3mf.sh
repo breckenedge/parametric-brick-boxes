@@ -60,6 +60,7 @@ project() { # 3mf stl...
     "$BAMBU" --arrange 1 --orient 0 --load-settings "$(w "$WORK/machine.json");$(w "$WORK/process.json")" \
         --load-filaments "$(w "$WORK/filament.json")" --export-3mf "$(w "$out")" "${stls[@]}"
     [ -s "$out" ] || { echo "failed: $out" >&2; exit 1; }
+    powershell -NoProfile -ExecutionPolicy Bypass -File "$(w "$HERE/mark_changed.ps1")" "$(w "$out")" "$(w "$WORK/ov.json")"
     echo "built $out"
 }
 
