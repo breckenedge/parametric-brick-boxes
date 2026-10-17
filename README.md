@@ -71,8 +71,8 @@ pick `part = print_in_place / print / body / lid`, then render and export.
 Bash; it runs OpenSCAD and Bambu Studio), e.g. `tools/build_3mf.sh 3mf 6x5 16x8`. Boxes
 up to 5 studs wide come out printed in place, wider ones in two pieces, all without
 supports (`SUPPORTS=1` turns them on, for bottom studs) and with a 5 mm outer brim, since
-a body with bottom sockets only meets the bed with a thin rim (`BRIM=0` turns it off). The printer, filament, process
-and stud sizes are variables at the top of the script.
+a body with bottom sockets only meets the bed with a thin rim (`BRIM=0` turns it off).
+The printer, filament, process and stud sizes are variables at the top of the script.
 
 `archive/` holds an earlier, decorative pillar version.
 
