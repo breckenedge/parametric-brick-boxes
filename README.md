@@ -49,8 +49,9 @@ or flat), with storage inside.
   standing lid should be perpendicular to it), the lid wobbled badly at about 6 studs.
   OpenSCAD warns in the console when an open lid would stand over 5 studs tall.
   For a bigger box, pick `part = print` for two pieces, the body
-  and the lid both upright, on a snug friction hinge you assemble. The lid needs supports
-  under its hollow underside. The body needs them only on bottom studs; with bottom
+  and the lid both upright, on a snug friction hinge you assemble. The lid prints top up,
+  its flat bottom edge on the bed, bridging over its hollow underside: on the author's A1,
+  a 4 x 4 lid printed fine without supports. The body needs them only on bottom studs; with bottom
   `sockets` or `flat` it prints flat without supports. Print
   `stud_fit_test.scad` first to find your stud and socket sizes, then a small 6 x 5 box
   to check the whole fit.
