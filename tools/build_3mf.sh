@@ -4,9 +4,10 @@
 # Bambu Studio's system presets, which it downloads into %APPDATA%\BambuStudio\system on first run.
 #
 #   tools/build_3mf.sh [out dir] [sizes...]
-#   tools/build_3mf.sh out 6x5 8x8
+#   tools/build_3mf.sh out 6x5 8x8x4
 #
-# Sizes are <studs_l>x<studs_w>. Boxes up to 5 studs wide come out printed in place
+# Sizes are <studs_l>x<studs_w>, or <studs_l>x<studs_w>x<side_rows> to set the height
+# (otherwise the scad's default). Boxes up to 5 studs wide come out printed in place
 # (brick_box_<size>_print_in_place.3mf); wider ones in two pieces (brick_box_<size>.3mf),
 # since a tall open lid knocks the box loose (see the README). Set MODE=pip or MODE=two to
 # force one. No supports: set SUPPORTS=1 for tree supports on the bed (bottom studs need them).
@@ -50,8 +51,8 @@ resolve "$PROCESS" "$WORK/process.json" "$WORK/ov.json"
 resolve "$FILAMENT" "$WORK/filament.json"
 
 stl() { # size part file
-    local l=${1%x*} wd=${1#*x}
-    "$OPENSCAD" --backend=manifold $STUDS -D studs_l=$l -D studs_w=$wd -D "part=\"$2\"" -o "$3" "$SCAD" 2>&1 | grep -E 'WARNING|ERROR' || true
+    local l wd h; IFS=x read -r l wd h <<< "$1"
+    "$OPENSCAD" --backend=manifold $STUDS -D studs_l=$l -D studs_w=$wd ${h:+-D side_rows=$h} -D "part=\"$2\"" -o "$3" "$SCAD" 2>&1 | grep -E 'WARNING|ERROR' || true
 }
 project() { # 3mf stl...
     local out=$1; shift
@@ -64,7 +65,8 @@ project() { # 3mf stl...
 
 for sz in "${SIZES[@]}"; do
     mode=$MODE
-    [ "$mode" = auto ] && { [ "${sz#*x}" -le 5 ] && mode=pip || mode=two; }
+    IFS=x read -r _ wd _ <<< "$sz"
+    [ "$mode" = auto ] && { [ "$wd" -le 5 ] && mode=pip || mode=two; }
     if [ "$mode" = pip ]; then
         stl "$sz" print_in_place "$WORK/brick box $sz print in place.stl"
         project "$OUT/brick_box_${sz}_print_in_place.3mf" "$WORK/brick box $sz print in place.stl"
