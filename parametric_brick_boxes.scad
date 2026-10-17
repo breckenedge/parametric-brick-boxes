@@ -167,8 +167,6 @@ PIN_L = 1.5;            // pin length out of each tab face
 PIN_FLAT = 0.5;         // flat on top and bottom of each pin: prints clean, and only passes the lead-in at 90 deg
 DT_U = min(2, WALL - 1.2);   // detent post: its outer face, in from the front face (the lid skin outside it)
 BEEF = 2;               // lid: solid margin round the hinge slots and the detent pocket
-RIB = 0.8;              // two-piece lid: ribs holding up its top skin, a stud apart
-RIB_IN = WALL + detent_bump + 0.5;   // ... kept this far in from the outside: clear of the wall top, bowing in at the detent
 PIP = part == "print_in_place";
 HCLR = PIP ? max(hinge_clear, pip_gap) : hinge_clear;   // gap round the tabs in their slots
 // detent bead height: printed in place, the loose pins let the shut lid slide pip_gap
@@ -499,20 +497,6 @@ module lid_hollow(fs, H) let(seam = H - LID_H,
             if (!PIP) translate([x - dx, -mm(fs[1]) / 2 - 1, seam - 2]) cube([2 * dx, dy + 1, LID_H + 2]);
             // printed in place its inner face would be a flat ceiling: slope it 45 deg in to the top skin
             else along_front(fs, x - dx, x + dx) polygon([[-1, seam - 2], [dy, seam - 2], [dy, seam], [dy + LID_H + 1, H + 1], [-1, H + 1]]);
-        if (!PIP) translate([0, 0, seam - 2]) linear_extrude(LID_H + 2) lid_ribs2d(fs, H);
-    }
-
-// two-piece, printed top up: a grid of ribs between the stud rows, from the bed up to the top
-// skin, so the skin bridges between them instead of needing supports. They stay inside the
-// body's walls and in front of the hinge axis, so opening the lid only lifts them
-module lid_ribs2d(fs, H) let(a = hinge_axis(fs, H), L = mm(fs[0]), W = mm(fs[1]))
-    intersection() {
-        plan(fs, RIB_IN);
-        translate([-L, -W]) square([2 * L, W + a[0]]);
-        union() {
-            for (x = mids(cols(fs[0]))) translate([x - RIB / 2, -W]) square([RIB, 2 * W]);
-            for (y = mids(cols(fs[1]))) translate([-L, y - RIB / 2]) square([2 * L, RIB]);
-        }
     }
 
 module box_body(fs, H) {
@@ -557,8 +541,6 @@ module box_lid(fs, H) {
                 front_of(fs, mm(fs[1]) / 2 - HR) ridge(fs, seam - 1, RIM - lid_clear - 1, SEAT + lid_clear + 1);
             }
             detent_fill(fs, H);
-            // the ribs' feet, where the groove cut cleared the lid's inside (the hollow keeps the rest)
-            if (!PIP) translate([0, 0, seam]) linear_extrude(SEAT + lid_clear + 1) lid_ribs2d(fs, H);
         }
         hinge_cuts(fs, H);
         detent_cuts(fs, H);
