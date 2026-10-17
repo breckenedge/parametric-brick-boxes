@@ -403,7 +403,10 @@ module hinge_cuts(fs, H) {
     L = mm(fs[0]); w = TAB_W / 2 + HCLR; hl = w + PIN_L + max(0.3, PIP ? pip_gap : 0);
     ch = hinge_pin_d - 2 * PIN_FLAT + 0.2;                    // lead-in: lets the flatted pins through only at 90 deg
     along_axis(fs, H, -L / 2 - 1, L / 2 + 1)                  // round the lower back edge about the axis
-        difference() { translate([0, -HR - 1]) square([HR + 1, HR + 1]); circle(r = HR, $fn = 96); }
+        if (PIP) difference() { translate([0, -HR - 1]) square([HR + 1, HR + 1]); circle(r = HR, $fn = 96); }
+        // two-piece, printed top up: a 45 deg chamfer instead, which prints without supports. It
+        // lies inside the same circle, so the edge swings just as clear of the wall top
+        else polygon([[0, -HR - 1], [HR + 1, -HR - 1], [HR + 1, 0], [HR, 0], [0, -HR]]);
     for (tx = tab_xs(fs)) {
         along_axis(fs, H, tx - w, tx + w) offset(r = HCLR) {
             // the tab as the lid sees it while turning 0..90 deg: head, its
