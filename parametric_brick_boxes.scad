@@ -49,9 +49,9 @@
 //  onto the pins, then close it. Tune hinge_play for stiffness.
 //  Side studs print as short horizontal pegs, with a small flat shaved off
 //  the side facing down as printed (side_stud_flat) so the worst of the
-//  overhang is gone. Wall sockets print with a 45 deg roof over each top-row
-//  stud, topped by a short flat that grips it, rather than one flat ceiling
-//  bridging the whole face; their tubes and pins print as short horizontal pegs.
+//  overhang is gone. Wall sockets print with a flat ceiling over each recess,
+//  broken into short bridges by a thin rib between each pair of top studs;
+//  their tubes and pins print as short horizontal pegs.
 //  Print stud_fit_test.scad, then a 6 x 5 box, to tune stud_d / side_stud_d /
 //  socket_d / side_socket_d / lid_clear.
 //  Set row for where the box stands on the shelf, then export with part = print_in_place / print / body / lid.
@@ -265,28 +265,24 @@ module lid_top_stud() if (PIP) side_stud(90); else stud();
 //         stays KEEP back from that edge so the corner stays solid, and the
 //         edge studs get round holes.
 //   skip: stud positions left solid, a whole stud cell each
-//   roof: the face prints upright, +v up: instead of one flat ceiling the
-//         length of the face (a bridge end to end), the recess stops at the
-//         top row's centres and each top stud gets its own 45 deg roof, with a
-//         short flat on top that still grips it
+//   ribs: the face prints upright, +v up: a thin rib between each pair of top
+//         studs, from the ceiling down onto the tube (or pin) below, so the
+//         ceiling prints as short bridges instead of one the length of the face
 KEEP = SOCKET_H + 0.8;
+RIB = 1.2;              // socket ceiling ribs: 3 lines, ~1 mm clear of the studs either side
 function mids(a) = [for (i = [0:len(a) - 2]) (a[i] + a[i + 1]) / 2];
 function edge_stud(a, i, lo, hi) = (!is_undef(lo) && i == 0) || (!is_undef(hi) && i == len(a) - 1);
 
-module recess2d(us, vs, d, keep, skip, roof = false) let(r = d / 2, nu = len(us), nv = len(vs),
+module recess2d(us, vs, d, keep, skip) let(r = d / 2, nu = len(us), nv = len(vs),
         u0 = is_undef(keep[0]) ? us[0] - r : max(us[0] - r, keep[0] + KEEP),
         u1 = is_undef(keep[1]) ? us[nu - 1] + r : min(us[nu - 1] + r, keep[1] - KEEP),
         v0 = is_undef(keep[2]) ? vs[0] - r : max(vs[0] - r, keep[2] + KEEP),
-        v1 = let(t = is_undef(keep[3]) ? vs[nv - 1] + r : min(vs[nv - 1] + r, keep[3] - KEEP)) roof ? min(t, vs[nv - 1]) : t)
+        v1 = is_undef(keep[3]) ? vs[nv - 1] + r : min(vs[nv - 1] + r, keep[3] - KEEP))
     difference() {
         union() {
             if (u1 > u0 && v1 > v0) translate([u0, v0]) square([u1 - u0, v1 - v0]);
             for (i = [0:nu - 1], j = [0:nv - 1])
                 if (edge_stud(us, i, keep[0], keep[1]) || edge_stud(vs, j, keep[2], keep[3])) translate([us[i], vs[j]]) circle(d = d, $fn = 48);
-            if (roof) for (u = us) translate([u, vs[nv - 1]]) hull() {
-                circle(d = d, $fn = 48);
-                translate([-r * (sqrt(2) - 1), r - eps]) square([2 * r * (sqrt(2) - 1), eps]);   // 45 deg sides, tangent to the circle
-            }
         }
         for (s = skip) translate(s) square(PITCH, center = true);
     }
@@ -300,12 +296,15 @@ module socket_post(od, id = 0) difference() {
     if (id > 0) translate([0, 0, -1]) cylinder(d = id, h = SOCKET_H + 2, $fn = 48);
 }
 
-module socket_field(us, vs, d, keep = [undef, undef, undef, undef], skip = [], roof = false) difference() {
+module socket_field(us, vs, d, keep = [undef, undef, undef, undef], skip = [], ribs = false) difference() {
     union() {
-        translate([0, 0, -1]) linear_extrude(SOCKET_H + 1) recess2d(us, vs, d, keep, skip, roof);
+        translate([0, 0, -1]) linear_extrude(SOCKET_H + 1) recess2d(us, vs, d, keep, skip);
         for (i = [0:3]) translate([0, 0, i * SOCKET_CH / 4 - (i == 0 ? 1 : 0)])
-            linear_extrude(SOCKET_CH / 4 + (i == 0 ? 1 : 0) + eps) offset(delta = SOCKET_CH * (1 - i / 4)) recess2d(us, vs, d, keep, skip, roof);
+            linear_extrude(SOCKET_CH / 4 + (i == 0 ? 1 : 0) + eps) offset(delta = SOCKET_CH * (1 - i / 4)) recess2d(us, vs, d, keep, skip);
     }
+    // ribs from the ceiling down into the middle of the tube wall below (above its hole), or onto the pin
+    if (ribs && len(us) > 1) let(top = vs[len(vs) - 1], lo = len(vs) > 1 ? top - PITCH / 2 + PITCH * sqrt(2) / 4 : top)
+        for (u = mids(us)) translate([u - RIB / 2, lo, -2]) cube([RIB, top + d / 2 + 1 - lo, SOCKET_H + 3]);
     // tubes touch the 4 studs round them (od + d = the diagonal pitch) and take a stud inside too (id = d); pins touch the 2 either side
     if (len(us) > 1 && len(vs) > 1) for (u = mids(us), v = mids(vs)) translate([u, v, 0]) let(od = PITCH * sqrt(2) - d) socket_post(od, d);
     else if (len(us) > 1) for (u = mids(us)) translate([u, vs[0], 0]) socket_post(PITCH - d);
