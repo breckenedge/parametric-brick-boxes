@@ -50,7 +50,7 @@
 //  Side studs print as short horizontal pegs, with a small flat shaved off
 //  the side facing down as printed (side_stud_flat) so the worst of the
 //  overhang is gone. Wall sockets print with a flat ceiling over each recess,
-//  broken into short bridges by a thin rib between each pair of top studs;
+//  broken into short bridges by a thin rib between each pair of stud columns;
 //  their tubes and pins print as short horizontal pegs.
 //  Print stud_fit_test.scad, then a 6 x 5 box, to tune stud_d / side_stud_d /
 //  socket_d / side_socket_d / lid_clear.
@@ -265,9 +265,10 @@ module lid_top_stud() if (PIP) side_stud(90); else stud();
 //         stays KEEP back from that edge so the corner stays solid, and the
 //         edge studs get round holes.
 //   skip: stud positions left solid, a whole stud cell each
-//   ribs: the face prints upright, +v up: a thin rib between each pair of top
-//         studs, from the ceiling down onto the tube (or pin) below, so the
-//         ceiling prints as short bridges instead of one the length of the face
+//   ribs: the face prints upright, +v up: a thin rib the whole height between
+//         each pair of stud columns, joining ceiling, tubes (or pins) and floor,
+//         so the ceiling and the tubes' undersides print as short bridges
+//         instead of one the length of the face
 KEEP = SOCKET_H + 0.8;
 RIB = 1.2;              // socket ceiling ribs: 3 lines, ~1 mm clear of the studs either side
 function mids(a) = [for (i = [0:len(a) - 2]) (a[i] + a[i + 1]) / 2];
@@ -302,9 +303,11 @@ module socket_field(us, vs, d, keep = [undef, undef, undef, undef], skip = [], r
         for (i = [0:3]) translate([0, 0, i * SOCKET_CH / 4 - (i == 0 ? 1 : 0)])
             linear_extrude(SOCKET_CH / 4 + (i == 0 ? 1 : 0) + eps) offset(delta = SOCKET_CH * (1 - i / 4)) recess2d(us, vs, d, keep, skip);
     }
-    // ribs from the ceiling down into the middle of the tube wall below (above its hole), or onto the pin
-    if (ribs && len(us) > 1) let(top = vs[len(vs) - 1], lo = len(vs) > 1 ? top - PITCH / 2 + PITCH * sqrt(2) / 4 : top)
-        for (u = mids(us)) translate([u - RIB / 2, lo, -2]) cube([RIB, top + d / 2 + 1 - lo, SOCKET_H + 3]);
+    // ribs the whole height between each pair of stud columns, floor to ceiling through the tubes (their holes left open) or pins
+    if (ribs && len(us) > 1) for (u = mids(us)) difference() {
+        translate([u - RIB / 2, vs[0] - d / 2 - 1, -2]) cube([RIB, vs[len(vs) - 1] - vs[0] + d + 2, SOCKET_H + 3]);
+        if (len(vs) > 1) for (v = mids(vs)) translate([u, v, -3]) cylinder(d = d, h = SOCKET_H + 5, $fn = 48);
+    }
     // tubes touch the 4 studs round them (od + d = the diagonal pitch) and take a stud inside too (id = d); pins touch the 2 either side
     if (len(us) > 1 && len(vs) > 1) for (u = mids(us), v = mids(vs)) translate([u, v, 0]) let(od = PITCH * sqrt(2) - d) socket_post(od, d);
     else if (len(us) > 1) for (u = mids(us)) translate([u, vs[0], 0]) socket_post(PITCH - d);
