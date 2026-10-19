@@ -53,7 +53,8 @@ or flat), with storage inside.
   up (open 90°) and press it onto the tabs. They only go in at that angle, and it lifts
   off the same way. The lid prints top up,
   its flat bottom edge on the bed, bridging over its hollow underside: on the author's A1,
-  a 4 x 4 lid printed fine without supports. The body needs them only on bottom studs; with bottom
+  a 4 x 4 lid printed fine without supports. Or set `lid_inverted` to print it top down,
+  with no bridge over the hollow (top studs then stand on the bed). The body needs supports only on bottom studs; with bottom
   `sockets` or `flat` it prints flat without supports. Print
   `stud_fit_test.scad` first to find your stud and socket sizes, then a small 6 x 5 box
   to check the whole fit. `bridge_test.scad` finds how far your filament bridges cleanly
@@ -74,7 +75,8 @@ pick `part = print_in_place / print / body / lid`, then render and export.
 Bash; it runs OpenSCAD and Bambu Studio), e.g. `tools/build_3mf.sh 3mf 6x5 16x8`. Boxes
 up to 5 studs wide come out printed in place, wider ones in two pieces. Only the lid of a
 two-piece box gets supports, tree supports from the bed under its long bridged top
-(`LID_SUPPORTS=0` turns them off; `SUPPORTS=1` puts them everywhere, for bottom studs).
+(`LID_SUPPORTS=0` turns them off; `SUPPORTS=1` puts them everywhere, for bottom studs;
+`LID_INVERTED=1` prints the lids top down instead, without them).
 Every box gets a 5 mm outer brim, since
 a body with bottom sockets only meets the bed with a thin rim (`BRIM=0` turns it off).
 The printer, filament, process and stud sizes are variables at the top of the script.

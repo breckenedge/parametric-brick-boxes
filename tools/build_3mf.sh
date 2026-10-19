@@ -34,6 +34,8 @@ SUPPORTS=${SUPPORTS:-0}
 # top skin (a 4-wide lid bridged fine without); the body never does. LID_SUPPORTS=0 for none
 LID_SUPPORTS=${LID_SUPPORTS:-1}
 LID_BRIDGE=${LID_BRIDGE:-5}
+# LID_INVERTED=1 prints two-piece lids top down (lid_inverted): no bridge, so no lid supports
+LID_INVERTED=${LID_INVERTED:-0}
 # outer brim width, mm (0 for none): with bottom sockets the body only meets the bed with a thin rim
 BRIM=${BRIM:-5}
 # the author's fit-test results on the A1 with SUNLU PLA+ 2.0 (README)
@@ -56,8 +58,8 @@ resolve "$PROCESS" "$WORK/process.json" "$WORK/ov.json"
 resolve "$FILAMENT" "$WORK/filament.json"
 
 stl() { # size part file
-    local l wd h; IFS=x read -r l wd h <<< "$1"
-    "$OPENSCAD" --backend=manifold $STUDS -D studs_l=$l -D studs_w=$wd ${h:+-D side_rows=$h} -D "part=\"$2\"" -o "$3" "$SCAD" 2>&1 | grep -E 'WARNING|ERROR' || true
+    local l wd h inv=false; IFS=x read -r l wd h <<< "$1"; [ "$LID_INVERTED" = 1 ] && inv=true
+    "$OPENSCAD" --backend=manifold $STUDS -D studs_l=$l -D studs_w=$wd ${h:+-D side_rows=$h} -D lid_inverted=$inv -D "part=\"$2\"" -o "$3" "$SCAD" 2>&1 | grep -E 'WARNING|ERROR' || true
 }
 project() { # 3mf supported-object stl...
     local out=$1 sobj=$2; shift 2
@@ -79,7 +81,7 @@ for sz in "${SIZES[@]}"; do
     else
         stl "$sz" body "$WORK/brick box $sz body.stl"
         stl "$sz" lid "$WORK/brick box $sz lid.stl"
-        sobj=""; [ "$LID_SUPPORTS" = 1 ] && [ "$wd" -gt "$LID_BRIDGE" ] && sobj="$sz lid.stl"
+        sobj=""; [ "$LID_SUPPORTS" = 1 ] && [ "$LID_INVERTED" != 1 ] && [ "$wd" -gt "$LID_BRIDGE" ] && sobj="$sz lid.stl"
         project "$OUT/brick_box_${sz}.3mf" "$sobj" "$WORK/brick box $sz body.stl" "$WORK/brick box $sz lid.stl"
     fi
 done

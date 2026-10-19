@@ -31,7 +31,8 @@
 //    lid   upright as modelled (top up, open underside down), its flat bottom
 //          edge on the bed (it sits flush on the flat wall top). The top skin
 //          over the hollow and the hinge slots need supports; the top studs
-//          print upright
+//          print upright. lid_inverted prints it top down instead: no bridge
+//          over the hollow, but top studs then stand on the bed
 //    print_in_place: one piece, the body upright with the lid standing open
 //          90 deg on it, nothing to assemble. Gaps of pip_gap separate them:
 //          round the hinge (loose, and with no lead-in the pins are captive)
@@ -65,6 +66,8 @@ use <fonts/Fredoka.ttf>
 part = "print_in_place"; // [print_in_place, print, body, lid]
 // print_in_place: the gap left between body and lid, mm
 pip_gap = 0.3;          // [0.2:0.05:0.6]
+// print / lid: print the lid inverted, its top on the bed (top studs or a raised label reach it) and the hollow underside open on top, so there's no long bridge over the hollow
+lid_inverted = false;
 
 /* [Box size] */
 // box length, left to right, studs (the whole footprint)
@@ -620,7 +623,10 @@ if (let(l = detent_len * PITCH + 0.6, xs = detent_xs(FS))   // each detent insid
 
 BODY_TIP = bottom == "studs" ? stud_h - eps : 0;   // body printed upright: its bottom studs reach the bed
 module body_print() translate([0, 0, BODY_TIP]) render() box_body(FS, BH);
-module lid_print() translate([0, 0, LID_H - BH]) render() box_lid(FS, BH);   // upright, its seam on the bed
+LID_TIP = TOP_TIP > 0 ? TOP_TIP - eps : 0;   // lid printed inverted: its top studs (or raised label) reach the bed
+module lid_print()
+    if (lid_inverted) translate([0, 0, BH + LID_TIP]) rotate([180, 0, 0]) render() box_lid(FS, BH);   // top down
+    else translate([0, 0, LID_H - BH]) render() box_lid(FS, BH);   // upright, its seam on the bed
 if (part == "body") color(body_color) body_print();
 else if (part == "lid") color(lid_color) lid_print();
 else if (PIP) translate([0, 0, BODY_TIP]) {   // print in place: body upright, the lid standing open on it
