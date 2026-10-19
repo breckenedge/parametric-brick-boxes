@@ -74,10 +74,7 @@ module socket_group(d, rows = 2) let(w = [PITCH + d, rows == 1 ? d : PITCH + d],
                 linear_extrude(SOCKET_CH / 4 + (i == 0 ? 1 : 0) + eps) square(w + 2 * SOCKET_CH * (1 - i / 4) * [1, 1], center = true);
         }
         difference() {
-            union() {
-                cylinder(d1 = od - 2 * SOCKET_CH, d2 = od, h = SOCKET_CH + eps, $fn = 48);
-                translate([0, 0, SOCKET_CH]) cylinder(d = od, h = SOCKET_H, $fn = 48);
-            }
+            cylinder(d = od, h = SOCKET_CH + SOCKET_H, $fn = 48);
             if (rows > 1) translate([0, 0, -1]) cylinder(d = d, h = SOCKET_H + 2, $fn = 48);   // a stud fits inside the tube too
         }
     }

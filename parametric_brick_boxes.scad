@@ -289,12 +289,9 @@ module recess2d(us, vs, d, keep, skip) let(r = d / 2, nu = len(us), nv = len(vs)
         for (s = skip) translate(s) square(PITCH, center = true);
     }
 
-// a tube (id > 0) or pin standing in the recess, its tip chamfered
+// a tube (id > 0) or pin standing in the recess, straight to its tip
 module socket_post(od, id = 0) difference() {
-    union() {
-        cylinder(d1 = od - 2 * SOCKET_CH, d2 = od, h = SOCKET_CH + eps, $fn = 48);
-        translate([0, 0, SOCKET_CH]) cylinder(d = od, h = SOCKET_H, $fn = 48);
-    }
+    cylinder(d = od, h = SOCKET_CH + SOCKET_H, $fn = 48);
     if (id > 0) translate([0, 0, -1]) cylinder(d = id, h = SOCKET_H + 2, $fn = 48);
 }
 
