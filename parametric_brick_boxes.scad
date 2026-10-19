@@ -265,10 +265,11 @@ module lid_top_stud() if (PIP) side_stud(90); else stud();
 //         stays KEEP back from that edge so the corner stays solid, and the
 //         edge studs get round holes.
 //   skip: stud positions left solid, a whole stud cell each
-//   ribs: the face prints upright, +v up: a thin rib the whole height between
-//         each pair of stud columns, joining ceiling, tubes (or pins) and floor,
-//         so the ceiling and the tubes' undersides print as short bridges
-//         instead of one the length of the face
+//   ribs: a thin rib all along v between each pair of stud columns, joining
+//         the recess edges and the tubes (or pins). On an upright face (+v up)
+//         the ceiling and the tubes' undersides then print as short bridges
+//         instead of one the length of the face; on the bottom they tie the
+//         tubes together so the print head can't knock them loose
 KEEP = SOCKET_H + 0.8;
 RIB = 1.2;              // socket ceiling ribs: 3 lines, ~1 mm clear of the studs either side
 function mids(a) = [for (i = [0:len(a) - 2]) (a[i] + a[i + 1]) / 2];
@@ -548,7 +549,8 @@ module box_body(fs, H) {
         if (bottom == "sockets") let(L = mm(fs[0]), W = mm(fs[1]))
             socket_field(cols(fs[0]), cols(fs[1]), socket_d,
                 [left == "sockets" ? -L / 2 : undef, right == "sockets" ? L / 2 : undef,
-                 front == "sockets" ? -W / 2 : undef, back == "sockets" ? W / 2 : undef]);
+                 front == "sockets" ? -W / 2 : undef, back == "sockets" ? W / 2 : undef], [],
+                true);   // ribs front to back tie the tubes together, so the print head can't knock them loose
     }
 }
 
