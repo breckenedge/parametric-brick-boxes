@@ -391,7 +391,7 @@ module tab2d() {
     translate([-TAB_D, -HR - eps]) square([TAB_D, HR + eps]);
     let(uw = HR - WALL, d = uw + TAB_D, g = PIP ? pip_gap : 0)   // buttress under the part of the stem that overhangs the inside
         if (d > 0) polygon(uw < 0 ? [[-TAB_D, -HR + eps], [0, -HR + eps], [0, -HR - d], [uw, -HR - d]]
-                                  : [[-TAB_D, -HR + eps], [0, -HR + eps], [0, -HR - g], [uw, -HR - g], [uw, -HR - d]]);   // flush with the seam behind the axis, where the lid lands at 90 deg (pip_gap below it, printed in place)
+                                  : [[-TAB_D, -HR + eps], [0, -HR + eps], [0, -HR - g], [uw + 0.5, -HR - g], [uw + 0.5, -HR - d], [uw, -HR - d]]);   // flush with the seam behind the axis, where the lid lands at 90 deg (pip_gap below it, printed in place); 0.5 mm into the wall so the tab fuses with it rather than just touching
 }
 
 // pin along +z with flats on local x (they end up top and bottom), cone tip
