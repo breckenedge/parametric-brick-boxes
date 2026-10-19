@@ -56,7 +56,8 @@ or flat), with storage inside.
   a 4 x 4 lid printed fine without supports. The body needs them only on bottom studs; with bottom
   `sockets` or `flat` it prints flat without supports. Print
   `stud_fit_test.scad` first to find your stud and socket sizes, then a small 6 x 5 box
-  to check the whole fit.
+  to check the whole fit. `bridge_test.scad` finds how far your filament bridges cleanly
+  (20–60 mm spans), which tells you how wide a two-piece lid can get without supports.
   For reference, on the author's Bambu Lab A1 printing
   [SUNLU PLA 2.0+](https://www.breckenridge.dev/amazon.html?asin=B0FG7VTXTY) (affiliate link), these clutch
   well: `stud_d` (top studs) 5.05, `side_stud_d` (side studs) 4.95–5.00,
