@@ -7,7 +7,7 @@
 #   tools/build_3mf.sh out 6x5 8x8x4
 #
 # Sizes are <studs_l>x<studs_w>, or <studs_l>x<studs_w>x<side_rows> to set the height
-# (otherwise the scad's default). Boxes up to 5 studs wide come out printed in place
+# (otherwise the scad's default), or stud_fit_test for the fit test. Boxes up to 5 studs wide come out printed in place
 # (brick_box_<size>_print_in_place.3mf); wider ones in two pieces (brick_box_<size>.3mf),
 # since a tall open lid knocks the box loose (see the README). Set MODE=pip or MODE=two to
 # force one. No supports, except under two-piece lids over 5 studs wide (LID_SUPPORTS,
@@ -72,6 +72,11 @@ project() { # 3mf supported-object stl...
 }
 
 for sz in "${SIZES[@]}"; do
+    if [ "$sz" = stud_fit_test ]; then   # the fit test, as modelled (all its sizes, so no stud overrides)
+        "$OPENSCAD" --backend=manifold -o "$WORK/stud fit test.stl" "$HERE/../stud_fit_test.scad" 2>&1 | grep -E 'WARNING|ERROR' || true
+        project "$OUT/stud_fit_test.3mf" "" "$WORK/stud fit test.stl"
+        continue
+    fi
     mode=$MODE
     IFS=x read -r _ wd _ <<< "$sz"
     [ "$mode" = auto ] && { [ "$wd" -le 5 ] && mode=pip || mode=two; }
