@@ -90,6 +90,8 @@ corner_r = 1;           // [0:0.25:1.5]
 top = "studs";          // [studs, sockets, flat, minifig]
 // minifig top: the stud row, counted forward from the back (0 = the back row, one stud in from the edge)
 minifig_row = 0;        // [0:1:27]
+// minifig top: where the pockets start, counted from the left (0 = one stud in from the edge), side by side a stud apart; -1 = spread evenly along the row
+minifig_col = -1;       // [-1:1:37]
 // minifig top: 1x2 stud pockets, one per minifig, spread evenly along the row; 0 = one slot the whole length, less a stud at each end
 minifigs = 2;           // [0:1:8]
 bottom = "sockets";     // [studs, sockets, flat]
@@ -244,10 +246,14 @@ function cols(n) = [for (i = [0:n - 1]) (i - (n - 1) / 2) * PITCH];
 // the lid's edge, so the row and pockets stay a stud in from it
 // the row's index from the front, counted in from the back
 MF_ROW = let(n = FS[1]) max(1, n - 2 - max(0, round(minifig_row)));
-// pockets: [first stud column, studs long]. Each pad's pair of columns centred as near as
-// the grid allows on k / (minifigs + 1) of the length; 0 = one slot over every inner column
-MF_POCKETS = let(n = FS[0], m = round(minifigs)) m <= 0 ? [[1, n - 2]]
-    : [for (k = [1:m]) [max(1, min(n - 3, round(n * k / (m + 1)) - 1)), 2]];
+// pockets: [first stud column, studs long]. minifig_col -1: each pad's pair of columns centred
+// as near as the grid allows on k / (minifigs + 1) of the length; else side by side from
+// minifig_col, a stud apart, held back from the right end. minifigs 0: one slot over the
+// inner columns, from minifig_col (if set) to the right end
+MF_POCKETS = let(n = FS[0], m = round(minifigs), c = round(minifig_col))
+    m <= 0 ? let(s = c < 0 ? 1 : min(1 + c, n - 2)) [[s, n - 1 - s]]
+    : c < 0 ? [for (k = [1:m]) [max(1, min(n - 3, round(n * k / (m + 1)) - 1)), 2]]
+    : let(s = max(1, min(1 + c, n - 3 * m))) [for (k = [0:m - 1]) [min(s + 3 * k, n - 3), 2]];
 // the top studs: [[x, y], ...]. The label clears full-top studs it covers; the minifig row wins over it
 function top_stud_pts(fs) = top == "studs" ? [for (x = cols(fs[0]), y = cols(fs[1])) if (!in_label(fs, x, y)) [x, y]]
     : top == "minifig" ? [for (p = MF_POCKETS, i = [p[0]:p[0] + p[1] - 1]) [cols(fs[0])[i], cols(fs[1])[MF_ROW]]] : [];

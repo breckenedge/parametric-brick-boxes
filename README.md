@@ -29,8 +29,10 @@ or flat), with storage inside.
   flush with the top and the lid still prints flat, either way up, without supports. The
   row runs parallel to the front, a stud in from the back edge by default; raise
   `minifig_row` to move it forward. `minifigs` sets the number of 1x2 pockets, one per
-  minifig, spread evenly along the row. `0` gives one slot the whole length, less a stud at
-  each end. Pockets keep a stud clear of the lid's edges, and the top skin thickens to
+  minifig, spread evenly along the row. Set `minifig_col` to place them yourself instead:
+  side by side a stud apart, starting that many studs in from the left (0 = a stud in
+  from the edge). `0` minifigs gives one slot the whole length, less a stud at each end,
+  or from `minifig_col` to the right end. Pockets keep a stud clear of the lid's edges, and the top skin thickens to
   3.2 mm under them. The row stays even where it crosses the label, and you get a warning
   when it does.
 - Optional text label on the lid top (**Lid label** group): set `label`, and it's
