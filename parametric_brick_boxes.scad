@@ -93,7 +93,8 @@ minifig_row = 0;        // [0:1:27]
 // minifig top: where the strip starts, counted from the left (0 = one stud in from the edge); -1 = centred
 minifig_col = -1;       // [-1:1:37]
 // minifig top: the strip's length, studs (2 per minifig); held a stud in from each end
-minifig_len = 4;        // [1:1:38]bottom = "sockets";     // [studs, sockets, flat]
+minifig_len = 4;        // [1:1:38]
+bottom = "sockets";     // [studs, sockets, flat]
 front = "studs";        // [studs, sockets, flat]
 back = "sockets";       // [studs, sockets, flat]
 left = "flat";          // [studs, sockets, flat]
