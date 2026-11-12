@@ -31,8 +31,8 @@ or flat), with storage inside.
   `minifig_row` to move it forward. `minifig_len` sets its length in studs (2 per
   minifig). It's centred, or set `minifig_col` to place it that many studs in from the
   left (0 = a stud in from the edge). The pocket keeps a stud clear of the lid's edges,
-  and the top skin thickens to 3.2 mm under it. Each stud is hollow, with a hole
-  (`minifig_hole`, 2.4 mm) down through it and the top skin into the lid's hollow. With
+  and the top skin thickens to 3.2 mm under it. Each stud is hollow, with a 2.4 mm
+  hole down through it and the top skin into the lid's hollow. With
   the lid open, push a rod up through it to pop off a part pressed down into the pocket. The row stays even where it crosses the label, and you get a warning
   when it does.
 - Optional text label on the lid top (**Lid label** group): set `label`, and it's

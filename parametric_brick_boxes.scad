@@ -93,10 +93,7 @@ minifig_row = 0;        // [0:1:27]
 // minifig top: where the strip starts, counted from the left (0 = one stud in from the edge); -1 = centred
 minifig_col = -1;       // [-1:1:37]
 // minifig top: the strip's length, studs (2 per minifig); held a stud in from each end
-minifig_len = 4;        // [1:1:38]
-// minifig top: a hole down through each stud and the top skin, mm - push a rod up through it from inside to pop a part off (0 = solid)
-minifig_hole = 2.4;     // [0:0.1:3.2]
-bottom = "sockets";     // [studs, sockets, flat]
+minifig_len = 4;        // [1:1:38]bottom = "sockets";     // [studs, sockets, flat]
 front = "studs";        // [studs, sockets, flat]
 back = "sockets";       // [studs, sockets, flat]
 left = "flat";          // [studs, sockets, flat]
@@ -201,6 +198,7 @@ SIDES = [front, back, left, right];
 FLOOR = bottom == "sockets" ? max(floor_t, SOCKET_MIN) : floor_t;
 LID_TOP = top == "sockets" || top == "minifig" ? max(lid_top, SOCKET_MIN) : lid_top;
 MF_GAP = 0.2;           // minifig pockets: clearance round the feet, per side, past the stud grid
+MF_HOLE = 2.4;          // minifig studs: release hole down each, through the top skin - push a rod up it to pop a part off
 eps = 0.01;
 $fn = 40;
 
@@ -259,8 +257,8 @@ module minifig_pockets(fs, H)
     for (p = MF_POCKETS) let(c = cols(fs[0]), x = (c[p[0]] + c[p[0] + p[1] - 1]) / 2, l = p[1] * PITCH + 2 * MF_GAP, w = PITCH + 2 * MF_GAP)
         translate([x - l / 2, cols(fs[1])[MF_ROW] - w / 2, H - stud_h]) cube([l, w, stud_h + 1]);
 // a release hole down each minifig stud, through the top skin and on through the lid band
-module minifig_holes(fs, H) if (minifig_hole > 0)
-    for (p = top_stud_pts(fs)) translate([p[0], p[1], H - LID_H - 1]) cylinder(d = minifig_hole, h = LID_H + 2, $fn = 32);
+module minifig_holes(fs, H)
+    for (p = top_stud_pts(fs)) translate([p[0], p[1], H - LID_H - 1]) cylinder(d = MF_HOLE, h = LID_H + 2, $fn = 32);
 
 // side stud centres on a face w wide, h high, relative to its centre: [[x, z], ...]
 function face_pts(w, h) = let(nx = round(w / PITCH), nz = round(h / PITCH))
