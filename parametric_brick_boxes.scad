@@ -86,11 +86,11 @@ row = 0;                // [0:1:6]
 corner_r = 1;           // [0:0.25:1.5]
 
 /* [Studs] */
-// each face, edge to edge: studs, sockets (a recess with tubes that takes studs, like a brick's underside) or flat. The top can also be minifig: flat, with one row of studs for minifigs to stand on
+// each face, edge to edge: studs, sockets (a recess with tubes that takes studs, like a brick's underside) or flat. The top can also be minifig: flat, with one row of studs sunk flush in pockets for minifigs to stand on
 top = "studs";          // [studs, sockets, flat, minifig]
-// minifig top: the stud row, counted from the front (0); -1 = the middle
-minifig_row = -1;       // [-1:1:29]
-// minifig top: 1x2 stud pads, one per minifig, spread evenly along the row; 0 = studs the whole length
+// minifig top: the stud row, counted forward from the back (0 = the back row, one stud in from the edge)
+minifig_row = 0;        // [0:1:27]
+// minifig top: 1x2 stud pockets, one per minifig, spread evenly along the row; 0 = one slot the whole length, less a stud at each end
 minifigs = 2;           // [0:1:8]
 bottom = "sockets";     // [studs, sockets, flat]
 front = "studs";        // [studs, sockets, flat]
@@ -195,7 +195,8 @@ SOCKET_CH = 0.4;        // 45 deg chamfer on the socket mouth: lead-in, and room
 SOCKET_MIN = SOCKET_H + 1.2;   // material a socket needs: its depth and a skin behind it
 SIDES = [front, back, left, right];
 FLOOR = bottom == "sockets" ? max(floor_t, SOCKET_MIN) : floor_t;
-LID_TOP = top == "sockets" ? max(lid_top, SOCKET_MIN) : lid_top;
+LID_TOP = top == "sockets" || top == "minifig" ? max(lid_top, SOCKET_MIN) : lid_top;
+MF_GAP = 0.2;           // minifig pockets: clearance round the feet, per side, past the stud grid
 eps = 0.01;
 $fn = 40;
 
@@ -215,7 +216,7 @@ BH = ROWS * PITCH;                                         // box height, mm
 LABEL = label != "";
 RAISED = label_style == "raised";
 LABEL_D = RAISED ? label_depth : min(label_depth, LID_TOP - 0.4);   // engraved: keep 0.4 mm of skin under it
-TOP_TIP = max(top == "studs" || top == "minifig" ? stud_h : 0, LABEL && RAISED ? LABEL_D : 0);   // how far anything stands up off the lid top
+TOP_TIP = max(top == "studs" ? stud_h : 0, LABEL && RAISED ? LABEL_D : 0);   // how far anything stands up off the lid top
 LABEL_GAP = 1;          // clear space round the text
 // the text's bounding box, [[x0, y0], [x1, y1]]. OpenSCAD without textmetrics() gets an estimate
 LABEL_TM = LABEL ? textmetrics(text = label, size = label_size, font = label_font, halign = "center", valign = "center") : undef;
@@ -238,14 +239,21 @@ module label2d(fs) rotate(label_rotate) multmatrix([[1, tan(label_slant), 0, 0],
 // ---------------------------------------------------------------------
 function cols(n) = [for (i = [0:n - 1]) (i - (n - 1) / 2) * PITCH];
 
-// minifig top: the row's index from the front, and the stud columns along it - each
-// pad's pair of columns centred as near as the grid allows on k / (minifigs + 1) of the length
-MF_ROW = let(n = FS[1]) minifig_row < 0 ? floor((n - 1) / 2) : min(round(minifig_row), n - 1);
-MF_COLS = let(n = FS[0], m = round(minifigs)) m <= 0 ? [0:n - 1]
-    : [for (k = [1:m], c = [0, 1]) max(0, min(n - 2, round(n * k / (m + 1)) - 1)) + c];
+// minifig top: studs sunk in pockets stud_h deep, their tips flush with the top, so the
+// lid prints flat either way up. A pocket in an edge row or column would break through
+// the lid's edge, so the row and pockets stay a stud in from it
+// the row's index from the front, counted in from the back
+MF_ROW = let(n = FS[1]) max(1, n - 2 - max(0, round(minifig_row)));
+// pockets: [first stud column, studs long]. Each pad's pair of columns centred as near as
+// the grid allows on k / (minifigs + 1) of the length; 0 = one slot over every inner column
+MF_POCKETS = let(n = FS[0], m = round(minifigs)) m <= 0 ? [[1, n - 2]]
+    : [for (k = [1:m]) [max(1, min(n - 3, round(n * k / (m + 1)) - 1)), 2]];
 // the top studs: [[x, y], ...]. The label clears full-top studs it covers; the minifig row wins over it
 function top_stud_pts(fs) = top == "studs" ? [for (x = cols(fs[0]), y = cols(fs[1])) if (!in_label(fs, x, y)) [x, y]]
-    : top == "minifig" ? [for (i = MF_COLS) [cols(fs[0])[i], cols(fs[1])[MF_ROW]]] : [];
+    : top == "minifig" ? [for (p = MF_POCKETS, i = [p[0]:p[0] + p[1] - 1]) [cols(fs[0])[i], cols(fs[1])[MF_ROW]]] : [];
+module minifig_pockets(fs, H)
+    for (p = MF_POCKETS) let(c = cols(fs[0]), x = (c[p[0]] + c[p[0] + p[1] - 1]) / 2, l = p[1] * PITCH + 2 * MF_GAP, w = PITCH + 2 * MF_GAP)
+        translate([x - l / 2, cols(fs[1])[MF_ROW] - w / 2, H - stud_h]) cube([l, w, stud_h + 1]);
 
 // side stud centres on a face w wide, h high, relative to its centre: [[x, z], ...]
 function face_pts(w, h) = let(nx = round(w / PITCH), nz = round(h / PITCH))
@@ -597,10 +605,11 @@ module box_lid(fs, H) {
                     [for (x = cols(fs[0]), y = cols(fs[1]))
                         if ((deep && y > sy && len([for (tx = tab_xs(fs)) if (abs(x - tx) < sx) tx]) > 0) || in_label(fs, x, y)) [x, y]]);
         if (LABEL && !RAISED && LABEL_D > 0) translate([0, 0, H - LABEL_D]) linear_extrude(LABEL_D + 1) label2d(fs);
+        if (top == "minifig") minifig_pockets(fs, H);
     }
     // round the lid band, but not the back of its bottom row, which lands on the wall top at 90 deg
     side_faces(fs, H, seam, H, "studs", seam + PITCH, true);
-    for (p = top_stud_pts(fs)) translate([p[0], p[1], H - eps]) lid_top_stud();
+    for (p = top_stud_pts(fs)) translate([p[0], p[1], (top == "minifig" ? H - stud_h : H) - eps]) lid_top_stud();
     if (LABEL && RAISED && LABEL_D > 0) translate([0, 0, H - eps]) linear_extrude(LABEL_D) label2d(fs);
 }
 
@@ -620,13 +629,13 @@ if (WALL < 3.2) echo(str("NOTE: ", WALL, " mm walls leave a ", SEAT, " mm seat r
 if (WALL < SOCKET_MIN && len([for (s = SIDES) if (s == "sockets") s]) > 0)
     echo(str("WARNING: ", WALL, " mm walls leave only ", WALL - SOCKET_H, " mm behind the wall sockets - use ", SOCKET_MIN, " or more"));
 if (FLOOR > floor_t) echo(str("NOTE: floor thickened to ", FLOOR, " mm for the bottom sockets"));
-if (LID_TOP > lid_top) echo(str("NOTE: lid top thickened to ", LID_TOP, " mm for the top sockets"));
+if (LID_TOP > lid_top) echo(str("NOTE: lid top thickened to ", LID_TOP, " mm for the top ", top == "minifig" ? "minifig pockets" : "sockets"));
 if (LABEL && (LABEL_SPAN[0] > mm(FS[0]) - 2 * WALL || LABEL_SPAN[1] > mm(FS[1]) - 2 * WALL))
     echo(str("WARNING: the label runs off the lid top - lower label_size or shorten the text"));
 if (top == "minifig" && round(minifigs) > 0 && FS[0] < 3 * round(minifigs))
     echo(str("WARNING: ", minifigs, " minifig pads crowd a ", FS[0], "-stud top - lower minifigs"));
-if (top == "minifig" && len([for (i = MF_COLS) if (in_label(FS, cols(FS[0])[i], cols(FS[1])[MF_ROW])) i]) > 0)
-    echo(str("WARNING: the minifig row runs through the label - move minifig_row (", MF_ROW, " now) or the label"));
+if (top == "minifig" && len([for (p = top_stud_pts(FS)) if (in_label(FS, p[0], p[1])) p]) > 0)
+    echo(str("WARNING: the minifig row runs through the label - move minifig_row (", FS[1] - 2 - MF_ROW, " now) or the label"));
 if (LABEL && LABEL_D < label_depth) echo(str("NOTE: label engraved ", LABEL_D, " mm deep, to leave 0.4 mm of the ", LID_TOP, " mm lid top under it - raise lid_top for deeper"));
 if (PIP && LID_ROWS > 1)
     echo(str("NOTE: printed in place, a lid ", LID_ROWS, " rows tall overhangs the back of the box by ", LID_H - PITCH, " mm - it needs supports there"));

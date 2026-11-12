@@ -25,10 +25,14 @@ or flat), with storage inside.
   or onto another box's studs without a thick solid plate under it. Flat faces take
   a label, or stand flush against a wall or another box.
 - `top = "minifig"`: a flat lid top with one row of studs for the minifigs that come
-  with a set to stand on. The row runs parallel to the front, `minifig_row` rows back
-  from it (`-1`, the default, puts it in the middle). `minifigs` sets the number of 1x2
-  pads, one per minifig, spread evenly along the row. `0` gives studs the whole length.
-  The row stays even where it crosses the label, and you get a warning when it does.
+  with a set to stand on. The studs sit in pockets a stud's height deep, so their tips are
+  flush with the top and the lid still prints flat, either way up, without supports. The
+  row runs parallel to the front, a stud in from the back edge by default; raise
+  `minifig_row` to move it forward. `minifigs` sets the number of 1x2 pockets, one per
+  minifig, spread evenly along the row. `0` gives one slot the whole length, less a stud at
+  each end. Pockets keep a stud clear of the lid's edges, and the top skin thickens to
+  3.2 mm under them. The row stays even where it crosses the label, and you get a warning
+  when it does.
 - Optional text label on the lid top (**Lid label** group): set `label`, and it's
   centred on the lid with the top studs or sockets round it left out. The text is
   engraved into the top skin (prints without supports) or raised off it (`label_style`),
