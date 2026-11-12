@@ -94,6 +94,8 @@ minifig_row = 0;        // [0:1:27]
 minifig_col = -1;       // [-1:1:37]
 // minifig top: the strip's length, studs (2 per minifig); held a stud in from each end
 minifig_len = 4;        // [1:1:38]
+// minifig top: a hole down through each stud and the top skin, mm - push a rod up through it from inside to pop a part off (0 = solid)
+minifig_hole = 2.4;     // [0:0.1:3.2]
 bottom = "sockets";     // [studs, sockets, flat]
 front = "studs";        // [studs, sockets, flat]
 back = "sockets";       // [studs, sockets, flat]
@@ -256,6 +258,9 @@ function top_stud_pts(fs) = top == "studs" ? [for (x = cols(fs[0]), y = cols(fs[
 module minifig_pockets(fs, H)
     for (p = MF_POCKETS) let(c = cols(fs[0]), x = (c[p[0]] + c[p[0] + p[1] - 1]) / 2, l = p[1] * PITCH + 2 * MF_GAP, w = PITCH + 2 * MF_GAP)
         translate([x - l / 2, cols(fs[1])[MF_ROW] - w / 2, H - stud_h]) cube([l, w, stud_h + 1]);
+// a release hole down each minifig stud, through the top skin and on through the lid band
+module minifig_holes(fs, H) if (minifig_hole > 0)
+    for (p = top_stud_pts(fs)) translate([p[0], p[1], H - LID_H - 1]) cylinder(d = minifig_hole, h = LID_H + 2, $fn = 32);
 
 // side stud centres on a face w wide, h high, relative to its centre: [[x, z], ...]
 function face_pts(w, h) = let(nx = round(w / PITCH), nz = round(h / PITCH))
@@ -607,11 +612,14 @@ module box_lid(fs, H) {
                     [for (x = cols(fs[0]), y = cols(fs[1]))
                         if ((deep && y > sy && len([for (tx = tab_xs(fs)) if (abs(x - tx) < sx) tx]) > 0) || in_label(fs, x, y)) [x, y]]);
         if (LABEL && !RAISED && LABEL_D > 0) translate([0, 0, H - LABEL_D]) linear_extrude(LABEL_D + 1) label2d(fs);
-        if (top == "minifig") minifig_pockets(fs, H);
+        if (top == "minifig") { minifig_pockets(fs, H); minifig_holes(fs, H); }
     }
     // round the lid band, but not the back of its bottom row, which lands on the wall top at 90 deg
     side_faces(fs, H, seam, H, "studs", seam + PITCH, true);
-    for (p = top_stud_pts(fs)) translate([p[0], p[1], (top == "minifig" ? H - stud_h : H) - eps]) lid_top_stud();
+    difference() {
+        for (p = top_stud_pts(fs)) translate([p[0], p[1], (top == "minifig" ? H - stud_h : H) - eps]) lid_top_stud();
+        if (top == "minifig") minifig_holes(fs, H);
+    }
     if (LABEL && RAISED && LABEL_D > 0) translate([0, 0, H - eps]) linear_extrude(LABEL_D) label2d(fs);
 }
 
