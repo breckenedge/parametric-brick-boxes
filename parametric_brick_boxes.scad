@@ -86,8 +86,12 @@ row = 0;                // [0:1:6]
 corner_r = 1;           // [0:0.25:1.5]
 
 /* [Studs] */
-// each face, edge to edge: studs, sockets (a recess with tubes that takes studs, like a brick's underside) or flat
-top = "studs";          // [studs, sockets, flat]
+// each face, edge to edge: studs, sockets (a recess with tubes that takes studs, like a brick's underside) or flat. The top can also be minifig: flat, with one row of studs for minifigs to stand on
+top = "studs";          // [studs, sockets, flat, minifig]
+// minifig top: the stud row, counted from the front (0); -1 = the middle
+minifig_row = -1;       // [-1:1:29]
+// minifig top: 1x2 stud pads, one per minifig, spread evenly along the row; 0 = studs the whole length
+minifigs = 2;           // [0:1:8]
 bottom = "sockets";     // [studs, sockets, flat]
 front = "studs";        // [studs, sockets, flat]
 back = "sockets";       // [studs, sockets, flat]
@@ -211,7 +215,7 @@ BH = ROWS * PITCH;                                         // box height, mm
 LABEL = label != "";
 RAISED = label_style == "raised";
 LABEL_D = RAISED ? label_depth : min(label_depth, LID_TOP - 0.4);   // engraved: keep 0.4 mm of skin under it
-TOP_TIP = max(top == "studs" ? stud_h : 0, LABEL && RAISED ? LABEL_D : 0);   // how far anything stands up off the lid top
+TOP_TIP = max(top == "studs" || top == "minifig" ? stud_h : 0, LABEL && RAISED ? LABEL_D : 0);   // how far anything stands up off the lid top
 LABEL_GAP = 1;          // clear space round the text
 // the text's bounding box, [[x0, y0], [x1, y1]]. OpenSCAD without textmetrics() gets an estimate
 LABEL_TM = LABEL ? textmetrics(text = label, size = label_size, font = label_font, halign = "center", valign = "center") : undef;
@@ -233,6 +237,15 @@ module label2d(fs) rotate(label_rotate) multmatrix([[1, tan(label_slant), 0, 0],
 //  Studs
 // ---------------------------------------------------------------------
 function cols(n) = [for (i = [0:n - 1]) (i - (n - 1) / 2) * PITCH];
+
+// minifig top: the row's index from the front, and the stud columns along it - each
+// pad's pair of columns centred as near as the grid allows on k / (minifigs + 1) of the length
+MF_ROW = let(n = FS[1]) minifig_row < 0 ? floor((n - 1) / 2) : min(round(minifig_row), n - 1);
+MF_COLS = let(n = FS[0], m = round(minifigs)) m <= 0 ? [0:n - 1]
+    : [for (k = [1:m], c = [0, 1]) max(0, min(n - 2, round(n * k / (m + 1)) - 1)) + c];
+// the top studs: [[x, y], ...]. The label clears full-top studs it covers; the minifig row wins over it
+function top_stud_pts(fs) = top == "studs" ? [for (x = cols(fs[0]), y = cols(fs[1])) if (!in_label(fs, x, y)) [x, y]]
+    : top == "minifig" ? [for (i = MF_COLS) [cols(fs[0])[i], cols(fs[1])[MF_ROW]]] : [];
 
 // side stud centres on a face w wide, h high, relative to its centre: [[x, z], ...]
 function face_pts(w, h) = let(nx = round(w / PITCH), nz = round(h / PITCH))
@@ -587,7 +600,7 @@ module box_lid(fs, H) {
     }
     // round the lid band, but not the back of its bottom row, which lands on the wall top at 90 deg
     side_faces(fs, H, seam, H, "studs", seam + PITCH, true);
-    if (top == "studs") for (x = cols(fs[0]), y = cols(fs[1])) if (!in_label(fs, x, y)) translate([x, y, H - eps]) lid_top_stud();
+    for (p = top_stud_pts(fs)) translate([p[0], p[1], H - eps]) lid_top_stud();
     if (LABEL && RAISED && LABEL_D > 0) translate([0, 0, H - eps]) linear_extrude(LABEL_D) label2d(fs);
 }
 
@@ -610,6 +623,10 @@ if (FLOOR > floor_t) echo(str("NOTE: floor thickened to ", FLOOR, " mm for the b
 if (LID_TOP > lid_top) echo(str("NOTE: lid top thickened to ", LID_TOP, " mm for the top sockets"));
 if (LABEL && (LABEL_SPAN[0] > mm(FS[0]) - 2 * WALL || LABEL_SPAN[1] > mm(FS[1]) - 2 * WALL))
     echo(str("WARNING: the label runs off the lid top - lower label_size or shorten the text"));
+if (top == "minifig" && round(minifigs) > 0 && FS[0] < 3 * round(minifigs))
+    echo(str("WARNING: ", minifigs, " minifig pads crowd a ", FS[0], "-stud top - lower minifigs"));
+if (top == "minifig" && len([for (i = MF_COLS) if (in_label(FS, cols(FS[0])[i], cols(FS[1])[MF_ROW])) i]) > 0)
+    echo(str("WARNING: the minifig row runs through the label - move minifig_row (", MF_ROW, " now) or the label"));
 if (LABEL && LABEL_D < label_depth) echo(str("NOTE: label engraved ", LABEL_D, " mm deep, to leave 0.4 mm of the ", LID_TOP, " mm lid top under it - raise lid_top for deeper"));
 if (PIP && LID_ROWS > 1)
     echo(str("NOTE: printed in place, a lid ", LID_ROWS, " rows tall overhangs the back of the box by ", LID_H - PITCH, " mm - it needs supports there"));
