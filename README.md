@@ -24,16 +24,14 @@ or flat), with storage inside.
   studs (small pins along a face only one stud wide), so a box presses onto a baseplate
   or onto another box's studs without a thick solid plate under it. Flat faces take
   a label, or stand flush against a wall or another box.
-- `top = "minifig"`: a flat lid top with one row of studs for the minifigs that come
-  with a set to stand on. The studs sit in pockets a stud's height deep, so their tips are
-  flush with the top and the lid still prints flat, either way up, without supports. The
-  row runs parallel to the front, a stud in from the back edge by default; raise
-  `minifig_row` to move it forward. `minifigs` sets the number of 1x2 pockets, one per
-  minifig, spread evenly along the row. Set `minifig_col` to place them yourself instead:
-  side by side a stud apart, starting that many studs in from the left (0 = a stud in
-  from the edge). `0` minifigs gives one slot the whole length, less a stud at each end,
-  or from `minifig_col` to the right end. Pockets keep a stud clear of the lid's edges, and the top skin thickens to
-  3.2 mm under them. The row stays even where it crosses the label, and you get a warning
+- `top = "minifig"`: a flat lid top with a strip of studs for the minifigs that come
+  with a set to stand on. The studs sit in a pocket a stud's height deep, so their tips
+  are flush with the top and the lid still prints flat, either way up, without supports.
+  The strip runs parallel to the front, a stud in from the back edge by default; raise
+  `minifig_row` to move it forward. `minifig_len` sets its length in studs (2 per
+  minifig). It's centred, or set `minifig_col` to place it that many studs in from the
+  left (0 = a stud in from the edge). The pocket keeps a stud clear of the lid's edges,
+  and the top skin thickens to 3.2 mm under it. The row stays even where it crosses the label, and you get a warning
   when it does.
 - Optional text label on the lid top (**Lid label** group): set `label`, and it's
   centred on the lid with the top studs or sockets round it left out. The text is

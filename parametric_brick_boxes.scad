@@ -90,10 +90,10 @@ corner_r = 1;           // [0:0.25:1.5]
 top = "studs";          // [studs, sockets, flat, minifig]
 // minifig top: the stud row, counted forward from the back (0 = the back row, one stud in from the edge)
 minifig_row = 0;        // [0:1:27]
-// minifig top: where the pockets start, counted from the left (0 = one stud in from the edge), side by side a stud apart; -1 = spread evenly along the row
+// minifig top: where the strip starts, counted from the left (0 = one stud in from the edge); -1 = centred
 minifig_col = -1;       // [-1:1:37]
-// minifig top: 1x2 stud pockets, one per minifig, spread evenly along the row; 0 = one slot the whole length, less a stud at each end
-minifigs = 2;           // [0:1:8]
+// minifig top: the strip's length, studs (2 per minifig); held a stud in from each end
+minifig_len = 4;        // [1:1:38]
 bottom = "sockets";     // [studs, sockets, flat]
 front = "studs";        // [studs, sockets, flat]
 back = "sockets";       // [studs, sockets, flat]
@@ -246,14 +246,10 @@ function cols(n) = [for (i = [0:n - 1]) (i - (n - 1) / 2) * PITCH];
 // the lid's edge, so the row and pockets stay a stud in from it
 // the row's index from the front, counted in from the back
 MF_ROW = let(n = FS[1]) max(1, n - 2 - max(0, round(minifig_row)));
-// pockets: [first stud column, studs long]. minifig_col -1: each pad's pair of columns centred
-// as near as the grid allows on k / (minifigs + 1) of the length; else side by side from
-// minifig_col, a stud apart, held back from the right end. minifigs 0: one slot over the
-// inner columns, from minifig_col (if set) to the right end
-MF_POCKETS = let(n = FS[0], m = round(minifigs), c = round(minifig_col))
-    m <= 0 ? let(s = c < 0 ? 1 : min(1 + c, n - 2)) [[s, n - 1 - s]]
-    : c < 0 ? [for (k = [1:m]) [max(1, min(n - 3, round(n * k / (m + 1)) - 1)), 2]]
-    : let(s = max(1, min(1 + c, n - 3 * m))) [for (k = [0:m - 1]) [min(s + 3 * k, n - 3), 2]];
+// the strip's pocket: [first stud column, studs long], from minifig_col, or centred as near
+// as the grid allows; held back from the right end
+MF_POCKETS = let(n = FS[0], l = max(1, min(round(minifig_len), n - 2)), c = round(minifig_col))
+    [[max(1, min(c < 0 ? floor((n - l) / 2) : 1 + c, n - 1 - l)), l]];
 // the top studs: [[x, y], ...]. The label clears full-top studs it covers; the minifig row wins over it
 function top_stud_pts(fs) = top == "studs" ? [for (x = cols(fs[0]), y = cols(fs[1])) if (!in_label(fs, x, y)) [x, y]]
     : top == "minifig" ? [for (p = MF_POCKETS, i = [p[0]:p[0] + p[1] - 1]) [cols(fs[0])[i], cols(fs[1])[MF_ROW]]] : [];
@@ -638,8 +634,6 @@ if (FLOOR > floor_t) echo(str("NOTE: floor thickened to ", FLOOR, " mm for the b
 if (LID_TOP > lid_top) echo(str("NOTE: lid top thickened to ", LID_TOP, " mm for the top ", top == "minifig" ? "minifig pockets" : "sockets"));
 if (LABEL && (LABEL_SPAN[0] > mm(FS[0]) - 2 * WALL || LABEL_SPAN[1] > mm(FS[1]) - 2 * WALL))
     echo(str("WARNING: the label runs off the lid top - lower label_size or shorten the text"));
-if (top == "minifig" && round(minifigs) > 0 && FS[0] < 3 * round(minifigs))
-    echo(str("WARNING: ", minifigs, " minifig pads crowd a ", FS[0], "-stud top - lower minifigs"));
 if (top == "minifig" && len([for (p = top_stud_pts(FS)) if (in_label(FS, p[0], p[1])) p]) > 0)
     echo(str("WARNING: the minifig row runs through the label - move minifig_row (", FS[1] - 2 - MF_ROW, " now) or the label"));
 if (LABEL && LABEL_D < label_depth) echo(str("NOTE: label engraved ", LABEL_D, " mm deep, to leave 0.4 mm of the ", LID_TOP, " mm lid top under it - raise lid_top for deeper"));
